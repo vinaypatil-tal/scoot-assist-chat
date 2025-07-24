@@ -175,9 +175,6 @@ export default function AdminDashboard() {
   if (!isAdmin) {
     return null;
   }
-
-  
-
   return (
     <div className="min-h-screen bg-gradient-chat">
       {/* Header */}
