@@ -59,16 +59,76 @@ export function AuthPage() {
     // Simulate OTP verification - any OTP will work
     setTimeout(async () => {
       try {
-        // Always succeed regardless of OTP entered
-        const { error } = await supabase.auth.signInAnonymously();
+        const fullPhoneNumber = `${countryCode}${phoneNumber}`;
         
-        if (error) throw error;
+        // First check if user exists with this phone number
+        const { data: existingProfile, error: profileError } = await supabase
+          .from('profiles')
+          .select('user_id')
+          .eq('phone_number', fullPhoneNumber)
+          .maybeSingle();
+
+        if (profileError) {
+          throw new Error("Failed to check existing user");
+        }
+
+        let authUserId: string;
+
+        if (existingProfile) {
+          // User exists, sign in anonymously and update session with profile data
+          const { data: authData, error: authError } = await supabase.auth.signInAnonymously();
+          
+          if (authError) throw authError;
+          
+          authUserId = authData.user.id;
+          
+          // Update the anonymous user session to link with existing profile
+          const { error: updateError } = await supabase
+            .from('profiles')
+            .update({ user_id: authUserId })
+            .eq('user_id', existingProfile.user_id);
+
+          if (updateError) {
+            console.error('Error linking existing profile:', updateError);
+          }
+
+          // Update orders to link with new auth user
+          const { error: orderUpdateError } = await supabase
+            .from('orders')
+            .update({ user_id: authUserId })
+            .eq('user_id', existingProfile.user_id);
+
+          if (orderUpdateError) {
+            console.error('Error linking existing orders:', orderUpdateError);
+          }
+        } else {
+          // New user, create anonymous account and profile
+          const { data: authData, error: authError } = await supabase.auth.signInAnonymously();
+          
+          if (authError) throw authError;
+          
+          authUserId = authData.user.id;
+          
+          // Create new profile
+          const { error: profileCreateError } = await supabase
+            .from('profiles')
+            .insert({
+              user_id: authUserId,
+              phone_number: fullPhoneNumber,
+              full_name: 'Customer' // Default name
+            });
+
+          if (profileCreateError) {
+            console.error('Error creating profile:', profileCreateError);
+          }
+        }
 
         toast({
           title: "Welcome!",
           description: "OTP verified successfully! You're now logged in.",
         });
       } catch (error: any) {
+        console.error('Authentication error:', error);
         toast({
           title: "Error",
           description: error.message || "Failed to sign in",
