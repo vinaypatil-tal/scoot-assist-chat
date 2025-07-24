@@ -14,7 +14,8 @@ import {
   Package,
   User,
   Bot,
-  LogOut
+  LogOut,
+  MessageSquareMore
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
@@ -152,6 +153,7 @@ export function ChatInterface() {
   const [isTyping, setIsTyping] = useState(false);
   const [user, setUser] = useState<SupabaseUser | null>(null);
   const [userProfile, setUserProfile] = useState<any>(null);
+  const [showManualReview, setShowManualReview] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
@@ -300,6 +302,60 @@ export function ChatInterface() {
 
     // Reload chat history to show the new message
     await loadChatHistory(user.id);
+  };
+
+  const submitForManualReview = async (messageId: string, userFeedback?: string) => {
+    if (!user) return;
+
+    try {
+      // Find the user message and bot response
+      const messageIndex = messages.findIndex(m => m.id === messageId);
+      if (messageIndex === -1) return;
+
+      const userMessage = messages[messageIndex];
+      const botResponse = messages[messageIndex + 1];
+
+      // Get some chat context (last few messages)
+      const contextMessages = messages.slice(Math.max(0, messageIndex - 2), messageIndex + 2);
+      const chatContext = contextMessages.map(m => 
+        `${m.isUser ? 'User' : 'Bot'}: ${m.content}`
+      ).join('\n\n');
+
+      const { error } = await supabase
+        .from('manual_review_requests')
+        .insert({
+          user_id: user.id,
+          phone_number: userProfile?.phone_number,
+          original_query: userMessage.content,
+          chat_context: chatContext,
+          chatbot_response: botResponse?.content || 'No bot response',
+          user_feedback: userFeedback || 'User requested manual review'
+        });
+
+      if (error) {
+        console.error('Error submitting manual review:', error);
+        toast({
+          title: "Error",
+          description: "Failed to submit for manual review",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      toast({
+        title: "Submitted for Review",
+        description: "Your query has been submitted for manual review. Our team will get back to you soon!",
+      });
+
+      setShowManualReview(null);
+    } catch (error) {
+      console.error('Error submitting manual review:', error);
+      toast({
+        title: "Error",
+        description: "An error occurred while submitting for review",
+        variant: "destructive",
+      });
+    }
   };
 
   const findBestFAQMatch = (userQuery: string): string => {
@@ -562,7 +618,7 @@ export function ChatInterface() {
                 {message.isUser ? <User className="w-4 h-4" /> : <Bot className="w-4 h-4" />}
               </div>
               <div className={cn(
-                "max-w-[70%] px-4 py-3 rounded-2xl",
+                "max-w-[70%] px-4 py-3 rounded-2xl relative group",
                 message.isUser
                   ? "bg-primary text-primary-foreground rounded-br-md"
                   : "bg-white shadow-soft rounded-bl-md",
@@ -595,6 +651,20 @@ export function ChatInterface() {
                     message.content
                   )}
                 </div>
+                
+                {/* Manual Review Button - only show for bot responses */}
+                {!message.isUser && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setShowManualReview(message.id)}
+                    className="absolute -bottom-8 right-0 opacity-0 group-hover:opacity-100 transition-opacity text-xs h-6 px-2 bg-white shadow-soft border border-border/50 hover:bg-accent/50"
+                  >
+                    <MessageSquareMore className="w-3 h-3 mr-1" />
+                    Need Help?
+                  </Button>
+                )}
+                
                 <p className={cn(
                   "text-xs mt-1 opacity-70",
                   message.isUser ? "text-primary-foreground/70" : "text-muted-foreground"
@@ -621,6 +691,69 @@ export function ChatInterface() {
           )}
           <div ref={messagesEndRef} />
         </div>
+
+        {/* Manual Review Modal */}
+        {showManualReview && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-xl p-6 max-w-md w-full shadow-xl">
+              <h3 className="text-lg font-semibold mb-4">Request Manual Review</h3>
+              <p className="text-sm text-muted-foreground mb-4">
+                Not satisfied with the answer? Our support team will review your question and provide a personalized response.
+              </p>
+              
+              <div className="space-y-3">
+                <Button
+                  onClick={() => submitForManualReview(showManualReview, "Answer not helpful")}
+                  variant="outline"
+                  className="w-full justify-start text-left h-auto py-3"
+                >
+                  <div>
+                    <div className="font-medium">Answer not helpful</div>
+                    <div className="text-xs text-muted-foreground">The response didn't solve my problem</div>
+                  </div>
+                </Button>
+                
+                <Button
+                  onClick={() => submitForManualReview(showManualReview, "Need more specific help")}
+                  variant="outline"
+                  className="w-full justify-start text-left h-auto py-3"
+                >
+                  <div>
+                    <div className="font-medium">Need more specific help</div>
+                    <div className="text-xs text-muted-foreground">My situation is unique and needs personal attention</div>
+                  </div>
+                </Button>
+                
+                <Button
+                  onClick={() => submitForManualReview(showManualReview, "Technical issue")}
+                  variant="outline"
+                  className="w-full justify-start text-left h-auto py-3"
+                >
+                  <div>
+                    <div className="font-medium">Technical issue</div>
+                    <div className="text-xs text-muted-foreground">I need technical support from an expert</div>
+                  </div>
+                </Button>
+              </div>
+              
+              <div className="flex gap-2 mt-6">
+                <Button
+                  variant="ghost"
+                  onClick={() => setShowManualReview(null)}
+                  className="flex-1"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={() => submitForManualReview(showManualReview)}
+                  className="flex-1"
+                >
+                  Submit for Review
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Message Input */}

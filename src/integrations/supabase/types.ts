@@ -59,6 +59,54 @@ export type Database = {
         }
         Relationships: []
       }
+      manual_review_requests: {
+        Row: {
+          admin_response: string | null
+          admin_user_id: string | null
+          chat_context: string | null
+          chatbot_response: string | null
+          created_at: string
+          id: string
+          original_query: string
+          phone_number: string | null
+          resolved_at: string | null
+          status: string
+          updated_at: string
+          user_feedback: string | null
+          user_id: string
+        }
+        Insert: {
+          admin_response?: string | null
+          admin_user_id?: string | null
+          chat_context?: string | null
+          chatbot_response?: string | null
+          created_at?: string
+          id?: string
+          original_query: string
+          phone_number?: string | null
+          resolved_at?: string | null
+          status?: string
+          updated_at?: string
+          user_feedback?: string | null
+          user_id: string
+        }
+        Update: {
+          admin_response?: string | null
+          admin_user_id?: string | null
+          chat_context?: string | null
+          chatbot_response?: string | null
+          created_at?: string
+          id?: string
+          original_query?: string
+          phone_number?: string | null
+          resolved_at?: string | null
+          status?: string
+          updated_at?: string
+          user_feedback?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string
