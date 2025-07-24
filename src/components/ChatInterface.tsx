@@ -281,14 +281,60 @@ export function ChatInterface() {
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      addMessage(`📎 Uploaded: ${file.name}`, true, 'file');
+    if (!file) return;
+
+    // File size validation (max 10MB)
+    const maxSize = 10 * 1024 * 1024;
+    if (file.size > maxSize) {
+      toast({
+        title: "File too large",
+        description: "Please select a file smaller than 10MB",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // File type validation
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
+    if (!allowedTypes.includes(file.type)) {
+      toast({
+        title: "Unsupported file type",
+        description: "Please upload an image (JPEG, PNG, GIF, WebP) or document (PDF, DOC, DOCX)",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Create file preview for images
+    const isImage = file.type.startsWith('image/');
+    if (isImage) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const imageUrl = e.target?.result as string;
+        addMessage(`📷 ${file.name}\n\n![Uploaded image](${imageUrl})`, true, 'file');
+        
+        setIsTyping(true);
+        setTimeout(() => {
+          setIsTyping(false);
+          addMessage("I can see your image! Our support team will review it and provide assistance based on what's shown. Is there anything specific about this image you'd like me to help with?", false);
+        }, 1500);
+      };
+      reader.readAsDataURL(file);
+    } else {
+      // For documents, show file info
+      const fileSize = (file.size / 1024).toFixed(1);
+      addMessage(`📄 ${file.name}\nSize: ${fileSize} KB\nType: ${file.type.split('/')[1].toUpperCase()}`, true, 'file');
       
       setIsTyping(true);
       setTimeout(() => {
         setIsTyping(false);
-        addMessage("Thank you for uploading the file! I've received it and our support team will review it to better assist you.", false);
+        addMessage("Thank you for uploading the document! Our support team will review it to better assist you. Please describe what specific help you need so we can provide the most relevant assistance.", false);
       }, 1500);
+    }
+
+    // Reset the input
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
     }
   };
 
@@ -380,7 +426,20 @@ export function ChatInterface() {
                   : "bg-white shadow-soft rounded-bl-md",
                 message.type === 'file' && "bg-accent/10 border border-accent/20"
               )}>
-                <div className="text-sm whitespace-pre-line">{message.content}</div>
+                <div className="text-sm whitespace-pre-line">
+                  {message.type === 'file' && message.content.includes('![Uploaded image]') ? (
+                    <div className="space-y-2">
+                      <div>{message.content.split('\n\n')[0]}</div>
+                      <img 
+                        src={message.content.match(/!\[.*?\]\((.*?)\)/)?.[1]} 
+                        alt="Uploaded file" 
+                        className="max-w-full h-auto rounded-lg border border-border/50 max-h-64 object-contain"
+                      />
+                    </div>
+                  ) : (
+                    message.content
+                  )}
+                </div>
                 <p className={cn(
                   "text-xs mt-1 opacity-70",
                   message.isUser ? "text-primary-foreground/70" : "text-muted-foreground"
@@ -448,7 +507,7 @@ export function ChatInterface() {
         type="file"
         className="hidden"
         onChange={handleFileSelect}
-        accept="image/*,.pdf,.doc,.docx"
+        accept="image/jpeg,image/png,image/gif,image/webp,.pdf,.doc,.docx"
       />
     </div>
   );
