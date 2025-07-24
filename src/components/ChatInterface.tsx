@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -19,6 +19,7 @@ import {
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { User as SupabaseUser } from "@supabase/supabase-js";
 
 interface Message {
   id: string;
@@ -26,6 +27,8 @@ interface Message {
   isUser: boolean;
   timestamp: Date;
   type?: 'text' | 'file' | 'quick-reply';
+  fileUrl?: string;
+  fileName?: string;
 }
 
 const PREDEFINED_QUESTIONS = [
@@ -144,20 +147,56 @@ const FAQ_DATABASE = {
 };
 
 export function ChatInterface() {
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: '1',
-      content: "Hi! I'm your ElectroScoot support assistant. How can I help you today?",
-      isUser: false,
-      timestamp: new Date(),
-      type: 'text'
-    }
-  ]);
+  const [messages, setMessages] = useState<Message[]>([]);
   const [inputMessage, setInputMessage] = useState("");
   const [isTyping, setIsTyping] = useState(false);
+  const [user, setUser] = useState<SupabaseUser | null>(null);
+  const [userProfile, setUserProfile] = useState<any>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
+
+  useEffect(() => {
+    // Get current user and load chat history
+    const getCurrentUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        setUser(user);
+        
+        // Get user profile for phone number
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('phone_number')
+          .eq('user_id', user.id)
+          .single();
+        
+        setUserProfile(profile);
+        
+        // Load chat history
+        await loadChatHistory(user.id);
+        
+        // Add welcome message if no chat history
+        const { data: existingMessages } = await supabase
+          .from('chat_messages')
+          .select('id')
+          .eq('user_id', user.id)
+          .limit(1);
+        
+        if (!existingMessages || existingMessages.length === 0) {
+          await saveMessageToDatabase(
+            "Hi! I'm your ElectroScoot support assistant. How can I help you today?",
+            false,
+            'text',
+            user.id,
+            profile?.phone_number
+          );
+          await loadChatHistory(user.id);
+        }
+      }
+    };
+
+    getCurrentUser();
+  }, []);
 
   const handleLogout = async () => {
     try {
@@ -177,15 +216,90 @@ export function ChatInterface() {
     }
   };
 
-  const addMessage = (content: string, isUser: boolean, type: 'text' | 'file' | 'quick-reply' = 'text') => {
-    const newMessage: Message = {
-      id: Date.now().toString(),
+  const loadChatHistory = async (userId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('chat_messages')
+        .select('*')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: true });
+
+      if (error) {
+        console.error('Error loading chat history:', error);
+        return;
+      }
+
+      const loadedMessages: Message[] = data.map(msg => ({
+        id: msg.id,
+        content: msg.message_content,
+        isUser: msg.is_user_message,
+        timestamp: new Date(msg.created_at),
+        type: msg.message_type as 'text' | 'file' | 'quick-reply',
+        fileUrl: msg.file_url || undefined,
+        fileName: msg.file_name || undefined
+      }));
+
+      setMessages(loadedMessages);
+    } catch (error) {
+      console.error('Error loading chat history:', error);
+    }
+  };
+
+  const saveMessageToDatabase = async (
+    content: string, 
+    isUser: boolean, 
+    type: 'text' | 'file' | 'quick-reply',
+    userId: string,
+    phoneNumber?: string,
+    fileUrl?: string,
+    fileName?: string,
+    fileType?: string,
+    fileSize?: number
+  ) => {
+    try {
+      const { error } = await supabase
+        .from('chat_messages')
+        .insert({
+          user_id: userId,
+          phone_number: phoneNumber,
+          message_content: content,
+          message_type: type,
+          is_user_message: isUser,
+          file_url: fileUrl,
+          file_name: fileName,
+          file_type: fileType,
+          file_size: fileSize
+        });
+
+      if (error) {
+        console.error('Error saving message:', error);
+        toast({
+          title: "Error",
+          description: "Failed to save message",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error('Error saving message to database:', error);
+    }
+  };
+
+  const addMessage = async (content: string, isUser: boolean, type: 'text' | 'file' | 'quick-reply' = 'text', fileUrl?: string, fileName?: string) => {
+    if (!user) return;
+
+    // Save to database
+    await saveMessageToDatabase(
       content,
       isUser,
-      timestamp: new Date(),
-      type
-    };
-    setMessages(prev => [...prev, newMessage]);
+      type,
+      user.id,
+      userProfile?.phone_number,
+      fileUrl,
+      fileName
+    );
+
+    // Reload chat history to show the new message
+    await loadChatHistory(user.id);
   };
 
   const findBestFAQMatch = (userQuery: string): string => {
@@ -226,27 +340,29 @@ export function ChatInterface() {
     return "I understand you're looking for help, but I couldn't find a specific answer for that question. Could you try rephrasing it or be more specific? \n\nFor example:\n• 'My battery won't charge'\n• 'How do I track my scooter?'\n• 'When will my order arrive?'\n\nOr you can click one of the quick help options above!";
   };
 
-  const handleSendMessage = () => {
-    if (!inputMessage.trim()) return;
+  const handleSendMessage = async () => {
+    if (!inputMessage.trim() || !user) return;
     
-    addMessage(inputMessage, true);
+    await addMessage(inputMessage, true);
     const userQuery = inputMessage;
     setInputMessage("");
     
     // Find and provide FAQ response
     setIsTyping(true);
-    setTimeout(() => {
+    setTimeout(async () => {
       setIsTyping(false);
       const response = findBestFAQMatch(userQuery);
-      addMessage(response, false);
+      await addMessage(response, false);
     }, 1500);
   };
 
-  const handleQuickReply = (question: typeof PREDEFINED_QUESTIONS[0]) => {
-    addMessage(`I need help with: ${question.title}`, true, 'quick-reply');
+  const handleQuickReply = async (question: typeof PREDEFINED_QUESTIONS[0]) => {
+    if (!user) return;
+    
+    await addMessage(`I need help with: ${question.title}`, true, 'quick-reply');
     
     setIsTyping(true);
-    setTimeout(() => {
+    setTimeout(async () => {
       setIsTyping(false);
       let response = "";
       
@@ -271,7 +387,7 @@ export function ChatInterface() {
           response = "I'm here to help with your scooter questions! Could you provide more details about your specific issue? You can also type your question naturally and I'll find the best answer for you.";
       }
       
-      addMessage(response, false);
+      await addMessage(response, false);
     }, 1500);
   };
 
@@ -279,9 +395,9 @@ export function ChatInterface() {
     fileInputRef.current?.click();
   };
 
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file) return;
+    if (!file || !user) return;
 
     // File size validation (max 10MB)
     const maxSize = 10 * 1024 * 1024;
@@ -305,31 +421,57 @@ export function ChatInterface() {
       return;
     }
 
-    // Create file preview for images
-    const isImage = file.type.startsWith('image/');
-    if (isImage) {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const imageUrl = e.target?.result as string;
-        addMessage(`📷 ${file.name}\n\n![Uploaded image](${imageUrl})`, true, 'file');
+    try {
+      // Upload file to Supabase Storage
+      const fileName = `${user.id}/${Date.now()}-${file.name}`;
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('chat-files')
+        .upload(fileName, file);
+
+      if (uploadError) {
+        console.error('Upload error:', uploadError);
+        toast({
+          title: "Upload failed",
+          description: "Failed to upload file. Please try again.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Get public URL for the uploaded file
+      const { data: { publicUrl } } = supabase.storage
+        .from('chat-files')
+        .getPublicUrl(fileName);
+
+      // Create file preview for images
+      const isImage = file.type.startsWith('image/');
+      if (isImage) {
+        await addMessage(`📷 ${file.name}`, true, 'file', publicUrl, file.name);
         
         setIsTyping(true);
-        setTimeout(() => {
+        setTimeout(async () => {
           setIsTyping(false);
-          addMessage("I can see your image! Our support team will review it and provide assistance based on what's shown. Is there anything specific about this image you'd like me to help with?", false);
+          await addMessage("I can see your image! Our support team will review it and provide assistance based on what's shown. Is there anything specific about this image you'd like me to help with?", false);
         }, 1500);
-      };
-      reader.readAsDataURL(file);
-    } else {
-      // For documents, show file info
-      const fileSize = (file.size / 1024).toFixed(1);
-      addMessage(`📄 ${file.name}\nSize: ${fileSize} KB\nType: ${file.type.split('/')[1].toUpperCase()}`, true, 'file');
-      
-      setIsTyping(true);
-      setTimeout(() => {
-        setIsTyping(false);
-        addMessage("Thank you for uploading the document! Our support team will review it to better assist you. Please describe what specific help you need so we can provide the most relevant assistance.", false);
-      }, 1500);
+      } else {
+        // For documents, show file info
+        const fileSize = (file.size / 1024).toFixed(1);
+        await addMessage(`📄 ${file.name}\nSize: ${fileSize} KB\nType: ${file.type.split('/')[1].toUpperCase()}`, true, 'file', publicUrl, file.name);
+        
+        setIsTyping(true);
+        setTimeout(async () => {
+          setIsTyping(false);
+          await addMessage("Thank you for uploading the document! Our support team will review it to better assist you. Please describe what specific help you need so we can provide the most relevant assistance.", false);
+        }, 1500);
+      }
+
+    } catch (error) {
+      console.error('File upload error:', error);
+      toast({
+        title: "Upload failed",
+        description: "An error occurred while uploading the file.",
+        variant: "destructive",
+      });
     }
 
     // Reset the input
@@ -427,14 +569,27 @@ export function ChatInterface() {
                 message.type === 'file' && "bg-accent/10 border border-accent/20"
               )}>
                 <div className="text-sm whitespace-pre-line">
-                  {message.type === 'file' && message.content.includes('![Uploaded image]') ? (
+                  {message.type === 'file' && message.fileUrl && message.fileName?.match(/\.(jpg|jpeg|png|gif|webp)$/i) ? (
                     <div className="space-y-2">
-                      <div>{message.content.split('\n\n')[0]}</div>
+                      <div>{message.content}</div>
                       <img 
-                        src={message.content.match(/!\[.*?\]\((.*?)\)/)?.[1]} 
-                        alt="Uploaded file" 
+                        src={message.fileUrl} 
+                        alt={message.fileName || "Uploaded file"} 
                         className="max-w-full h-auto rounded-lg border border-border/50 max-h-64 object-contain"
                       />
+                    </div>
+                  ) : message.type === 'file' && message.fileUrl ? (
+                    <div className="space-y-2">
+                      <div>{message.content}</div>
+                      <a 
+                        href={message.fileUrl} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-2 text-primary hover:text-primary/80 underline"
+                      >
+                        <Paperclip className="w-4 h-4" />
+                        View File
+                      </a>
                     </div>
                   ) : (
                     message.content
