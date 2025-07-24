@@ -117,11 +117,14 @@ export default function OrderTracking() {
 
   const loadUserOrders = async (userId: string) => {
     try {
+      console.log('Loading orders for user ID:', userId);
       const { data, error } = await supabase
         .from('orders')
         .select('*')
         .eq('user_id', userId)
         .order('order_date', { ascending: false });
+
+      console.log('User orders query result:', { data, error, count: data?.length });
 
       if (error) {
         console.error('Error loading orders:', error);
@@ -148,13 +151,26 @@ export default function OrderTracking() {
 
     setSearching(true);
     try {
+      console.log('Searching for order ID:', searchOrderId.trim());
       const { data, error } = await supabase
         .from('orders')
         .select('*')
         .eq('order_id', searchOrderId.trim())
-        .single();
+        .maybeSingle();
 
-      if (error || !data) {
+      console.log('Search result:', { data, error });
+
+      if (error) {
+        console.error('Search error:', error);
+        toast({
+          title: "Search Error",
+          description: "An error occurred while searching for the order",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      if (!data) {
         toast({
           title: "Order Not Found",
           description: "No order found with that ID. Please check and try again.",
