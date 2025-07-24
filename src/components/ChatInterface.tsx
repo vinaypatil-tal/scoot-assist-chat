@@ -13,9 +13,12 @@ import {
   Clock,
   Package,
   User,
-  Bot
+  Bot,
+  LogOut
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
 interface Message {
   id: string;
@@ -78,6 +81,25 @@ export function ChatInterface() {
   const [isTyping, setIsTyping] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const { toast } = useToast();
+
+  const handleLogout = async () => {
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
+      
+      toast({
+        title: "Logged out",
+        description: "You've been successfully logged out.",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to log out",
+        variant: "destructive",
+      });
+    }
+  };
 
   const addMessage = (content: string, isUser: boolean, type: 'text' | 'file' | 'quick-reply' = 'text') => {
     const newMessage: Message = {
@@ -162,9 +184,20 @@ export function ChatInterface() {
                 <p className="text-sm text-muted-foreground">Online • Usually replies instantly</p>
               </div>
             </div>
-            <Badge variant="secondary" className="bg-accent/10 text-accent border-accent/20">
-              Live Chat
-            </Badge>
+            <div className="flex items-center gap-3">
+              <Badge variant="secondary" className="bg-accent/10 text-accent border-accent/20">
+                Live Chat
+              </Badge>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={handleLogout}
+                className="h-8 w-8 hover:bg-destructive/10 hover:text-destructive"
+                title="Logout"
+              >
+                <LogOut className="w-4 h-4" />
+              </Button>
+            </div>
           </div>
         </div>
       </div>
