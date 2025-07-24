@@ -15,12 +15,14 @@ import {
   User,
   Bot,
   LogOut,
-  MessageSquareMore
+  MessageSquareMore,
+  Settings
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { User as SupabaseUser } from "@supabase/supabase-js";
+import { useNavigate } from "react-router-dom";
 
 interface Message {
   id: string;
@@ -154,9 +156,11 @@ export function ChatInterface() {
   const [user, setUser] = useState<SupabaseUser | null>(null);
   const [userProfile, setUserProfile] = useState<any>(null);
   const [showManualReview, setShowManualReview] = useState<string | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   useEffect(() => {
     // Get current user and load chat history
@@ -173,6 +177,15 @@ export function ChatInterface() {
           .single();
         
         setUserProfile(profile);
+        
+        // Check if user is admin
+        const { data: roles } = await supabase
+          .from('user_roles')
+          .select('role')
+          .eq('user_id', user.id)
+          .eq('role', 'admin');
+        
+        setIsAdmin(roles && roles.length > 0);
         
         // Load chat history
         await loadChatHistory(user.id);
@@ -555,6 +568,18 @@ export function ChatInterface() {
               <Badge variant="secondary" className="bg-accent/10 text-accent border-accent/20">
                 Live Chat
               </Badge>
+              {isAdmin && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => navigate("/admin")}
+                  className="h-8 px-3 hover:bg-primary/10 hover:text-primary"
+                  title="Admin Dashboard"
+                >
+                  <Settings className="w-4 h-4 mr-1" />
+                  Admin
+                </Button>
+              )}
               <Button
                 variant="ghost"
                 size="icon"
