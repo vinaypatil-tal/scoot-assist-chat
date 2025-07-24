@@ -64,6 +64,8 @@ export default function AdminDashboard() {
   const [showNewCategory, setShowNewCategory] = useState(false);
   const [showNewFAQ, setShowNewFAQ] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<string>("");
+  const [adminLoginMethod, setAdminLoginMethod] = useState<string | null>(null);
+  const [adminPhone, setAdminPhone] = useState<string | null>(null);
   
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -81,6 +83,21 @@ export default function AdminDashboard() {
         return;
       }
 
+      // Get admin login method and phone
+      const loginMethod = localStorage.getItem("adminLoginMethod");
+      const phoneNumber = localStorage.getItem("adminPhone");
+      setAdminLoginMethod(loginMethod);
+      setAdminPhone(phoneNumber);
+
+      // For simple admin auth, skip Supabase user checks
+      if (loginMethod === "password" || loginMethod === "mobile") {
+        setIsAdmin(true);
+        await loadData();
+        setLoading(false);
+        return;
+      }
+
+      // Fallback to original Supabase auth flow
       const { data: { user } } = await supabase.auth.getUser();
       
       if (!user) {
@@ -163,8 +180,17 @@ export default function AdminDashboard() {
 
   const handleLogout = async () => {
     try {
-      await supabase.auth.signOut();
-      navigate("/auth");
+      // Clear admin authentication
+      localStorage.removeItem("adminAuthenticated");
+      localStorage.removeItem("adminLoginMethod");
+      localStorage.removeItem("adminPhone");
+      
+      // Only sign out from Supabase if using Supabase auth
+      if (adminLoginMethod !== "password" && adminLoginMethod !== "mobile") {
+        await supabase.auth.signOut();
+      }
+      
+      navigate("/admin-login");
     } catch (error) {
       console.error('Error logging out:', error);
     }
@@ -346,9 +372,20 @@ export default function AdminDashboard() {
               </div>
             </div>
             <div className="flex items-center gap-3">
-              <Badge variant="secondary" className="bg-destructive/10 text-destructive border-destructive/20">
-                Admin Access
-              </Badge>
+              <div className="flex flex-col items-end gap-1">
+                <Badge variant="secondary" className="bg-destructive/10 text-destructive border-destructive/20">
+                  Admin Access
+                </Badge>
+                {adminLoginMethod && (
+                  <div className="text-xs text-muted-foreground">
+                    {adminLoginMethod === "mobile" && adminPhone 
+                      ? `Mobile: ${adminPhone}` 
+                      : adminLoginMethod === "password" 
+                      ? "Password Login" 
+                      : "Supabase Auth"}
+                  </div>
+                )}
+              </div>
               <Button
                 variant="ghost"
                 size="icon"
