@@ -7,6 +7,7 @@ import Index from "./pages/Index";
 import { AuthPage } from "./pages/AuthPage";
 import { FAQ } from "./pages/FAQ";
 import AdminDashboard from "./pages/AdminDashboard";
+import AdminLogin from "./pages/AdminLogin";
 import OrderTracking from "./pages/OrderTracking";
 import NotFound from "./pages/NotFound";
 
@@ -23,6 +24,7 @@ const App = () => (
           <Route path="/auth" element={<AuthPage />} />
           <Route path="/faq" element={<FAQ />} />
           <Route path="/admin" element={<AdminDashboard />} />
+          <Route path="/admin-login" element={<AdminLogin />} />
           <Route path="/orders" element={<OrderTracking />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />

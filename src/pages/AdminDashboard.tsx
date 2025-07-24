@@ -74,6 +74,13 @@ export default function AdminDashboard() {
 
   const checkAdminAccess = async () => {
     try {
+      // Check simple admin authentication first
+      const adminAuth = localStorage.getItem("adminAuthenticated");
+      if (!adminAuth) {
+        navigate("/admin-login");
+        return;
+      }
+
       const { data: { user } } = await supabase.auth.getUser();
       
       if (!user) {
