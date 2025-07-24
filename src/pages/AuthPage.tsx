@@ -5,20 +5,13 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 import { Zap, Phone, ArrowRight } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
-const countryCodes = [
-  { code: "+1", country: "USA", flag: "🇺🇸" },
-  { code: "+91", country: "India", flag: "🇮🇳" },
-];
-
 export function AuthPage() {
   const [phoneNumber, setPhoneNumber] = useState("");
-  const [countryCode, setCountryCode] = useState("+1");
   const [otp, setOtp] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [otpSent, setOtpSent] = useState(false);
@@ -59,20 +52,16 @@ export function AuthPage() {
     // Simulate OTP verification - any OTP will work
     setTimeout(async () => {
       try {
-        const fullPhoneNumber = `${countryCode}${phoneNumber}`;
-        
-        // First check if user exists with this phone number
+        // Check if user exists with this phone number
         const { data: existingProfile, error: profileError } = await supabase
           .from('profiles')
           .select('user_id')
-          .eq('phone_number', fullPhoneNumber)
+          .eq('phone_number', phoneNumber)
           .maybeSingle();
 
         if (profileError) {
           throw new Error("Failed to check existing user");
         }
-
-        let authUserId: string;
 
         if (existingProfile) {
           // User exists, sign in anonymously and update session with profile data
@@ -80,12 +69,10 @@ export function AuthPage() {
           
           if (authError) throw authError;
           
-          authUserId = authData.user.id;
-          
           // Update the anonymous user session to link with existing profile
           const { error: updateError } = await supabase
             .from('profiles')
-            .update({ user_id: authUserId })
+            .update({ user_id: authData.user.id })
             .eq('user_id', existingProfile.user_id);
 
           if (updateError) {
@@ -95,32 +82,14 @@ export function AuthPage() {
           // Update orders to link with new auth user
           const { error: orderUpdateError } = await supabase
             .from('orders')
-            .update({ user_id: authUserId })
+            .update({ user_id: authData.user.id })
             .eq('user_id', existingProfile.user_id);
 
           if (orderUpdateError) {
             console.error('Error linking existing orders:', orderUpdateError);
           }
         } else {
-          // New user, create anonymous account and profile
-          const { data: authData, error: authError } = await supabase.auth.signInAnonymously();
-          
-          if (authError) throw authError;
-          
-          authUserId = authData.user.id;
-          
-          // Create new profile
-          const { error: profileCreateError } = await supabase
-            .from('profiles')
-            .insert({
-              user_id: authUserId,
-              phone_number: fullPhoneNumber,
-              full_name: 'Customer' // Default name
-            });
-
-          if (profileCreateError) {
-            console.error('Error creating profile:', profileCreateError);
-          }
+          throw new Error("Phone number not found. Please contact support.");
         }
 
         toast({
@@ -162,7 +131,7 @@ export function AuthPage() {
             <CardHeader className="text-center space-y-2">
               <CardTitle className="text-2xl">Verify Your Phone</CardTitle>
               <CardDescription>
-                Enter the 6-digit code sent to {countryCode} {phoneNumber}
+                Enter the 6-digit code sent to {phoneNumber}
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -250,34 +219,17 @@ export function AuthPage() {
                 <Label htmlFor="phone" className="text-sm font-medium">
                   Mobile Number
                 </Label>
-                <div className="flex gap-2">
-                  <Select value={countryCode} onValueChange={setCountryCode}>
-                    <SelectTrigger className="w-[120px] h-12 rounded-lg border-border/50 focus:border-primary bg-background">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent className="bg-background border border-border shadow-lg z-50">
-                      {countryCodes.map((country) => (
-                        <SelectItem key={country.code} value={country.code} className="hover:bg-accent">
-                          <div className="flex items-center gap-2">
-                            <span>{country.flag}</span>
-                            <span>{country.code}</span>
-                          </div>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <div className="relative flex-1">
-                    <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
-                    <Input
-                      id="phone"
-                      type="tel"
-                      placeholder={countryCode === "+1" ? "(555) 123-4567" : "1234567890"}
-                      value={phoneNumber}
-                      onChange={(e) => setPhoneNumber(e.target.value)}
-                      className="pl-10 h-12 rounded-lg border-border/50 focus:border-primary"
-                      required
-                    />
-                  </div>
+                <div className="relative">
+                  <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
+                  <Input
+                    id="phone"
+                    type="tel"
+                    placeholder="1234567890"
+                    value={phoneNumber}
+                    onChange={(e) => setPhoneNumber(e.target.value)}
+                    className="pl-10 h-12 rounded-lg border-border/50 focus:border-primary"
+                    required
+                  />
                 </div>
               </div>
               
