@@ -165,6 +165,29 @@ export function AuthPage() {
     }
   };
 
+  const handleAnonymousSignIn = async () => {
+    setIsLoading(true);
+
+    try {
+      const { error } = await supabase.auth.signInAnonymously();
+
+      if (error) throw error;
+
+      toast({
+        title: "Welcome!",
+        description: "You're now signed in as a guest.",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to sign in anonymously",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   if (otpSent) {
     return (
       <div className="min-h-screen bg-gradient-chat flex items-center justify-center p-4">
@@ -498,8 +521,35 @@ export function AuthPage() {
               </TabsContent>
             </Tabs>
 
-            <div className="mt-6 text-center">
-              <p className="text-xs text-muted-foreground">
+            <div className="mt-6 space-y-4">
+              <div className="relative">
+                <div className="absolute inset-0 flex items-center">
+                  <span className="w-full border-t border-border/50" />
+                </div>
+                <div className="relative flex justify-center text-xs uppercase">
+                  <span className="bg-background px-2 text-muted-foreground">Or</span>
+                </div>
+              </div>
+              
+              <Button
+                type="button"
+                variant="outline"
+                size="mobile"
+                className="w-full"
+                onClick={handleAnonymousSignIn}
+                disabled={isLoading}
+              >
+                {isLoading ? (
+                  <div className="flex items-center gap-2">
+                    <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                    Signing in...
+                  </div>
+                ) : (
+                  "Continue as Guest"
+                )}
+              </Button>
+              
+              <p className="text-xs text-muted-foreground text-center">
                 By continuing, you agree to our Terms of Service and Privacy Policy
               </p>
             </div>
