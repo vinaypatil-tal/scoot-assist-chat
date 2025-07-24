@@ -4,12 +4,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+
 import { useToast } from "@/hooks/use-toast";
 import { Lock, Phone } from "lucide-react";
 
 const AdminLogin = () => {
-  const [password, setPassword] = useState("");
+  
   const [phoneNumber, setPhoneNumber] = useState("");
   const [otp, setOtp] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -17,37 +17,6 @@ const AdminLogin = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  // Simple password check - in production this would be more secure
-  const ADMIN_PASSWORD = "admin123";
-
-  const handlePasswordLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
-
-    // Simulate loading
-    await new Promise(resolve => setTimeout(resolve, 500));
-
-    if (password === ADMIN_PASSWORD) {
-      // Store admin session in localStorage (simple approach)
-      localStorage.setItem("adminAuthenticated", "true");
-      localStorage.setItem("adminLoginMethod", "password");
-      
-      toast({
-        title: "Login Successful",
-        description: "Welcome to the admin dashboard",
-      });
-      
-      navigate("/admin");
-    } else {
-      toast({
-        title: "Login Failed", 
-        description: "Invalid password",
-        variant: "destructive",
-      });
-    }
-
-    setIsLoading(false);
-  };
 
   const handleSendOtp = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -108,28 +77,17 @@ const AdminLogin = () => {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <Tabs defaultValue="password" className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="password" className="flex items-center gap-2">
-                <Lock className="w-4 h-4" />
-                Password
-              </TabsTrigger>
-              <TabsTrigger value="mobile" className="flex items-center gap-2">
-                <Phone className="w-4 h-4" />
-                Mobile
-              </TabsTrigger>
-            </TabsList>
-            
-            <TabsContent value="password" className="mt-4">
-              <form onSubmit={handlePasswordLogin} className="space-y-4">
+          <div className="w-full mt-4">
+            {!showOtpField ? (
+              <form onSubmit={handleSendOtp} className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="password">Password</Label>
+                  <Label htmlFor="phone">Mobile Number</Label>
                   <Input
-                    id="password"
-                    type="password"
-                    placeholder="Enter admin password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
+                    id="phone"
+                    type="tel"
+                    placeholder="Enter mobile number"
+                    value={phoneNumber}
+                    onChange={(e) => setPhoneNumber(e.target.value)}
                     required
                   />
                 </div>
@@ -138,71 +96,46 @@ const AdminLogin = () => {
                   className="w-full" 
                   disabled={isLoading}
                 >
-                  {isLoading ? "Logging in..." : "Login with Password"}
+                  {isLoading ? "Sending OTP..." : "Send OTP"}
                 </Button>
               </form>
-            </TabsContent>
-            
-            <TabsContent value="mobile" className="mt-4">
-              {!showOtpField ? (
-                <form onSubmit={handleSendOtp} className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="phone">Mobile Number</Label>
-                    <Input
-                      id="phone"
-                      type="tel"
-                      placeholder="Enter mobile number"
-                      value={phoneNumber}
-                      onChange={(e) => setPhoneNumber(e.target.value)}
-                      required
-                    />
-                  </div>
+            ) : (
+              <form onSubmit={handleOtpLogin} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="otp">Enter OTP</Label>
+                  <Input
+                    id="otp"
+                    type="text"
+                    placeholder="Enter 6-digit OTP"
+                    value={otp}
+                    onChange={(e) => setOtp(e.target.value)}
+                    maxLength={6}
+                    required
+                  />
+                  <p className="text-sm text-muted-foreground">
+                    OTP sent to {phoneNumber}. Enter any 6-digit code.
+                  </p>
+                </div>
+                <div className="flex gap-2">
+                  <Button 
+                    type="button" 
+                    variant="outline" 
+                    onClick={() => setShowOtpField(false)}
+                    className="flex-1"
+                  >
+                    Back
+                  </Button>
                   <Button 
                     type="submit" 
-                    className="w-full" 
+                    className="flex-1" 
                     disabled={isLoading}
                   >
-                    {isLoading ? "Sending OTP..." : "Send OTP"}
+                    {isLoading ? "Verifying..." : "Verify OTP"}
                   </Button>
-                </form>
-              ) : (
-                <form onSubmit={handleOtpLogin} className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="otp">Enter OTP</Label>
-                    <Input
-                      id="otp"
-                      type="text"
-                      placeholder="Enter 6-digit OTP"
-                      value={otp}
-                      onChange={(e) => setOtp(e.target.value)}
-                      maxLength={6}
-                      required
-                    />
-                    <p className="text-sm text-muted-foreground">
-                      OTP sent to {phoneNumber}. Enter any 6-digit code.
-                    </p>
-                  </div>
-                  <div className="flex gap-2">
-                    <Button 
-                      type="button" 
-                      variant="outline" 
-                      onClick={() => setShowOtpField(false)}
-                      className="flex-1"
-                    >
-                      Back
-                    </Button>
-                    <Button 
-                      type="submit" 
-                      className="flex-1" 
-                      disabled={isLoading}
-                    >
-                      {isLoading ? "Verifying..." : "Verify OTP"}
-                    </Button>
-                  </div>
-                </form>
-              )}
-            </TabsContent>
-          </Tabs>
+                </div>
+              </form>
+            )}
+          </div>
           
           <div className="mt-4 text-center">
             <Button 

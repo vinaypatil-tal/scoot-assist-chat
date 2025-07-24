@@ -90,7 +90,7 @@ export default function AdminDashboard() {
       setAdminPhone(phoneNumber);
 
       // For simple admin auth, skip Supabase user checks
-      if (loginMethod === "password" || loginMethod === "mobile") {
+      if (loginMethod === "mobile") {
         setIsAdmin(true);
         await loadData();
         setLoading(false);
@@ -186,7 +186,7 @@ export default function AdminDashboard() {
       localStorage.removeItem("adminPhone");
       
       // Only sign out from Supabase if using Supabase auth
-      if (adminLoginMethod !== "password" && adminLoginMethod !== "mobile") {
+      if (adminLoginMethod !== "mobile") {
         await supabase.auth.signOut();
       }
       
@@ -380,8 +380,6 @@ export default function AdminDashboard() {
                   <div className="text-xs text-muted-foreground">
                     {adminLoginMethod === "mobile" && adminPhone 
                       ? `Mobile: ${adminPhone}` 
-                      : adminLoginMethod === "password" 
-                      ? "Password Login" 
                       : "Supabase Auth"}
                   </div>
                 )}
