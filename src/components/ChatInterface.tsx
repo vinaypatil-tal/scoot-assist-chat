@@ -18,7 +18,8 @@ import {
   MessageSquareMore,
   Settings,
   Zap,
-  Sparkles
+  Sparkles,
+  HelpCircle
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
@@ -581,6 +582,16 @@ export function ChatInterface() {
                 <Sparkles className="w-3 h-3 mr-1" />
                 Live Chat
               </Badge>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => navigate("/faq")}
+                className="h-9 px-4 hover:bg-primary/10 hover:text-primary transition-smooth font-medium"
+                title="Frequently Asked Questions"
+              >
+                <HelpCircle className="w-4 h-4 mr-2" />
+                <span className="hidden sm:inline">FAQ</span>
+              </Button>
               <Button
                 variant="ghost"
                 size="sm"
