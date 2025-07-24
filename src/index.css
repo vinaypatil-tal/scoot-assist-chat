@@ -1,104 +1,103 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Poppins:wght@400;500;600;700;800&display=swap');
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* Electric Scooter Support App Design System */
+/* Modern Scooter-Themed Design System */
 
 @layer base {
   :root {
-    /* Electric blue theme for scooter brand */
-    --background: 0 0% 100%;
-    --foreground: 220 13% 18%;
-
-    --card: 0 0% 100%;
-    --card-foreground: 220 13% 18%;
-
-    --popover: 0 0% 100%;
-    --popover-foreground: 220 13% 18%;
-
-    /* Electric blue primary */
-    --primary: 212 100% 50%;
+    /* Vibrant Scooter Theme Colors */
+    --primary: 220 100% 60%; /* Electric Blue */
+    --primary-dark: 220 100% 50%;
+    --primary-light: 220 100% 70%;
+    --primary-glow: 200 100% 75%;
     --primary-foreground: 0 0% 100%;
-    --primary-glow: 212 100% 65%;
-
-    /* Soft electric secondary */
-    --secondary: 210 40% 96%;
-    --secondary-foreground: 220 13% 18%;
-
-    --muted: 210 40% 96%;
-    --muted-foreground: 215 16% 47%;
-
-    /* Electric green accent */
-    --accent: 142 76% 36%;
-    --accent-foreground: 0 0% 100%;
-
-    --destructive: 0 84% 60%;
+    
+    --secondary: 280 100% 65%; /* Electric Purple */
+    --secondary-dark: 280 100% 55%;
+    --secondary-light: 280 100% 75%;
+    --secondary-foreground: 0 0% 100%;
+    
+    --accent: 45 100% 60%; /* Electric Yellow */
+    --accent-dark: 45 100% 50%;
+    --accent-light: 45 100% 70%;
+    --accent-foreground: 0 0% 10%;
+    
+    --success: 140 60% 50%; /* Electric Green */
+    --warning: 35 100% 60%; /* Orange */
+    --destructive: 0 84% 60%; /* Red */
     --destructive-foreground: 0 0% 100%;
-
+    
+    /* Neutral Colors */
+    --background: 0 0% 100%;
+    --foreground: 222 84% 4.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 222 84% 4.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 84% 4.9%;
+    --muted: 210 40% 98%;
+    --muted-foreground: 215 16% 47%;
     --border: 214 32% 91%;
     --input: 214 32% 91%;
-    --ring: 212 100% 50%;
-
-    /* Electric-themed gradients */
-    --gradient-electric: linear-gradient(135deg, hsl(212 100% 50%), hsl(142 76% 36%));
-    --gradient-electric-soft: linear-gradient(135deg, hsl(212 100% 95%), hsl(142 76% 95%));
-    --gradient-chat: linear-gradient(180deg, hsl(0 0% 100%), hsl(210 40% 98%));
-
-    /* Shadows with electric glow */
-    --shadow-electric: 0 10px 30px -10px hsl(212 100% 50% / 0.3);
-    --shadow-soft: 0 2px 10px -2px hsl(220 13% 18% / 0.1);
-
-    /* Smooth transitions */
+    --ring: 220 100% 60%;
+    
+    /* Custom Gradients */
+    --gradient-electric: linear-gradient(135deg, hsl(220 100% 60%), hsl(280 100% 65%));
+    --gradient-electric-soft: linear-gradient(135deg, hsl(220 100% 90%), hsl(280 100% 90%));
+    --gradient-chat: linear-gradient(180deg, hsl(210 40% 98%), hsl(0 0% 100%));
+    --gradient-accent: linear-gradient(135deg, hsl(45 100% 60%), hsl(35 100% 60%));
+    --gradient-success: linear-gradient(135deg, hsl(140 60% 50%), hsl(200 100% 75%));
+    
+    /* Enhanced Shadows */
+    --shadow-soft: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    --shadow-medium: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    --shadow-large: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+    --shadow-glow: 0 0 20px hsl(220 100% 60% / 0.3);
+    --shadow-electric: 0 8px 32px hsl(220 100% 60% / 0.3);
+    
+    /* Animation Values */
     --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    --transition-spring: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+    --transition-bounce: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    
+    --radius: 0.75rem;
 
-    --radius: 0.5rem;
-
+    /* Sidebar colors */
     --sidebar-background: 0 0% 98%;
-
     --sidebar-foreground: 240 5.3% 26.1%;
-
     --sidebar-primary: 240 5.9% 10%;
-
     --sidebar-primary-foreground: 0 0% 98%;
-
     --sidebar-accent: 240 4.8% 95.9%;
-
     --sidebar-accent-foreground: 240 5.9% 10%;
-
     --sidebar-border: 220 13% 91%;
-
     --sidebar-ring: 217.2 91.2% 59.8%;
   }
 
   .dark {
-    --background: 222.2 84% 4.9%;
+    --background: 222 84% 4.9%;
     --foreground: 210 40% 98%;
-
-    --card: 222.2 84% 4.9%;
+    --card: 222 84% 4.9%;
     --card-foreground: 210 40% 98%;
-
-    --popover: 222.2 84% 4.9%;
+    --popover: 222 84% 4.9%;
     --popover-foreground: 210 40% 98%;
-
-    --primary: 210 40% 98%;
-    --primary-foreground: 222.2 47.4% 11.2%;
-
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
-
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
-
-    --destructive: 0 62.8% 30.6%;
+    --primary: 220 100% 70%;
+    --primary-foreground: 222 84% 4.9%;
+    --secondary: 280 100% 75%;
+    --secondary-foreground: 222 84% 4.9%;
+    --muted: 217 32% 17%;
+    --muted-foreground: 215 20% 65%;
+    --accent: 45 100% 70%;
+    --accent-foreground: 222 84% 4.9%;
+    --destructive: 0 84% 60%;
     --destructive-foreground: 210 40% 98%;
+    --border: 217 32% 17%;
+    --input: 217 32% 17%;
+    --ring: 220 100% 70%;
+    
+    /* Dark mode gradients */
+    --gradient-chat: linear-gradient(180deg, hsl(217 32% 17%), hsl(222 84% 4.9%));
+    --shadow-glow: 0 0 20px hsl(220 100% 70% / 0.5);
 
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
     --sidebar-background: 240 5.9% 10%;
     --sidebar-foreground: 240 4.8% 95.9%;
     --sidebar-primary: 224.3 76.3% 48%;
@@ -114,8 +113,158 @@
   * {
     @apply border-border;
   }
-
+  
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground font-sans;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+}
+
+@layer components {
+  /* Scooter Theme Components */
+  .bg-gradient-electric {
+    background: var(--gradient-electric);
+  }
+  
+  .bg-gradient-electric-soft {
+    background: var(--gradient-electric-soft);
+  }
+  
+  .bg-gradient-chat {
+    background: var(--gradient-chat);
+  }
+  
+  .bg-gradient-accent {
+    background: var(--gradient-accent);
+  }
+  
+  .bg-gradient-success {
+    background: var(--gradient-success);
+  }
+  
+  .shadow-soft {
+    box-shadow: var(--shadow-soft);
+  }
+  
+  .shadow-medium {
+    box-shadow: var(--shadow-medium);
+  }
+  
+  .shadow-large {
+    box-shadow: var(--shadow-large);
+  }
+  
+  .shadow-glow {
+    box-shadow: var(--shadow-glow);
+  }
+  
+  .shadow-electric {
+    box-shadow: var(--shadow-electric);
+  }
+  
+  .transition-smooth {
+    transition: var(--transition-smooth);
+  }
+  
+  .transition-bounce {
+    transition: var(--transition-bounce);
+  }
+  
+  /* Scooter-themed animations */
+  .animate-slide-up {
+    animation: slideUp 0.3s ease-out;
+  }
+  
+  .animate-bounce-in {
+    animation: bounceIn 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  }
+  
+  .animate-electric-pulse {
+    animation: electricPulse 2s ease-in-out infinite;
+  }
+  
+  /* Hover effects */
+  .hover-lift {
+    @apply transition-all duration-300 hover:-translate-y-1 hover:shadow-electric;
+  }
+  
+  .hover-glow {
+    @apply transition-all duration-300 hover:shadow-glow;
+  }
+  
+  /* Mobile-first responsive containers */
+  .container-mobile {
+    @apply w-full max-w-sm mx-auto px-4;
+  }
+  
+  .container-tablet {
+    @apply w-full max-w-2xl mx-auto px-6;
+  }
+  
+  .container-desktop {
+    @apply w-full max-w-4xl mx-auto px-8;
+  }
+}
+
+@layer utilities {
+  /* Scooter-themed text styles */
+  .text-gradient-electric {
+    @apply bg-gradient-electric bg-clip-text text-transparent;
+  }
+  
+  .text-gradient-accent {
+    @apply bg-gradient-accent bg-clip-text text-transparent;
+  }
+  
+  /* Icon containers */
+  .icon-container {
+    @apply w-12 h-12 rounded-xl bg-gradient-electric flex items-center justify-center shadow-soft;
+  }
+  
+  .icon-container-sm {
+    @apply w-8 h-8 rounded-lg bg-gradient-electric-soft flex items-center justify-center;
+  }
+  
+  .icon-container-lg {
+    @apply w-16 h-16 rounded-2xl bg-gradient-electric flex items-center justify-center shadow-electric;
+  }
+}
+
+/* Custom animations */
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes bounceIn {
+  0% {
+    opacity: 0;
+    transform: scale(0.3);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.05);
+  }
+  70% {
+    transform: scale(0.9);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes electricPulse {
+  0%, 100% {
+    box-shadow: 0 0 5px hsl(220 100% 60% / 0.5);
+  }
+  50% {
+    box-shadow: 0 0 20px hsl(220 100% 60% / 0.8), 0 0 40px hsl(220 100% 60% / 0.6);
   }
 }

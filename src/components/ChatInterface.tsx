@@ -16,7 +16,9 @@ import {
   Bot,
   LogOut,
   MessageSquareMore,
-  Settings
+  Settings,
+  Zap,
+  Sparkles
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
@@ -550,51 +552,62 @@ export function ChatInterface() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-chat flex flex-col">
+    <div className="min-h-screen bg-gradient-chat">
       {/* Header */}
-      <div className="bg-white border-b border-border shadow-soft">
-        <div className="max-w-4xl mx-auto px-4 py-4">
+      <div className="bg-white/80 backdrop-blur-md border-b border-border/50 shadow-soft sticky top-0 z-40">
+        <div className="container-desktop py-4">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-gradient-electric rounded-xl flex items-center justify-center">
-                <Bot className="w-5 h-5 text-white" />
+            <div className="flex items-center gap-4">
+              <div className="icon-container animate-electric-pulse">
+                <Zap className="w-6 h-6 text-white" />
               </div>
               <div>
-                <h2 className="font-semibold text-lg">ElectroScoot Support</h2>
-                <p className="text-sm text-muted-foreground">Online • Usually replies instantly</p>
+                <h2 className="font-display font-bold text-xl text-gradient-electric">
+                  ElectroScoot Support
+                </h2>
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 bg-success rounded-full animate-pulse"></div>
+                  <p className="text-sm text-muted-foreground font-medium">
+                    Online • Lightning fast replies
+                  </p>
+                </div>
               </div>
             </div>
-            <div className="flex items-center gap-3">
-              <Badge variant="secondary" className="bg-accent/10 text-accent border-accent/20">
+            <div className="flex items-center gap-2">
+              <Badge 
+                variant="secondary" 
+                className="bg-gradient-success text-white border-0 shadow-soft hover-glow px-3 py-1.5 font-medium"
+              >
+                <Sparkles className="w-3 h-3 mr-1" />
                 Live Chat
               </Badge>
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={() => navigate("/orders")}
-                className="h-8 px-3 hover:bg-accent/10 hover:text-accent"
+                className="h-9 px-4 hover:bg-accent/10 hover:text-accent transition-smooth font-medium"
                 title="Track Orders"
               >
-                <Package className="w-4 h-4 mr-1" />
-                Orders
+                <Package className="w-4 h-4 mr-2" />
+                <span className="hidden sm:inline">Orders</span>
               </Button>
               {isAdmin && (
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={() => navigate("/admin")}
-                  className="h-8 px-3 hover:bg-primary/10 hover:text-primary"
+                  className="h-9 px-4 hover:bg-primary/10 hover:text-primary transition-smooth font-medium"
                   title="Admin Dashboard"
                 >
-                  <Settings className="w-4 h-4 mr-1" />
-                  Admin
+                  <Settings className="w-4 h-4 mr-2" />
+                  <span className="hidden sm:inline">Admin</span>
                 </Button>
               )}
               <Button
                 variant="ghost"
                 size="icon"
                 onClick={handleLogout}
-                className="h-8 w-8 hover:bg-destructive/10 hover:text-destructive"
+                className="h-9 w-9 hover:bg-destructive/10 hover:text-destructive transition-smooth"
                 title="Logout"
               >
                 <LogOut className="w-4 h-4" />
@@ -605,25 +618,36 @@ export function ChatInterface() {
       </div>
 
       {/* Quick Questions Section */}
-      <div className="max-w-4xl mx-auto w-full px-4 py-6">
-        <h3 className="text-lg font-medium mb-4">How can we help you today?</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+      <div className="container-desktop py-8">
+        <div className="text-center mb-8">
+          <h3 className="font-display font-bold text-2xl mb-3 text-gradient-electric">
+            How can we help you today?
+          </h3>
+          <p className="text-muted-foreground font-medium">
+            Choose a category or type your question naturally
+          </p>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {PREDEFINED_QUESTIONS.map((question) => {
             const IconComponent = question.icon;
             return (
               <Card 
                 key={question.id}
-                className="cursor-pointer hover:shadow-soft transition-all duration-300 hover:scale-105 border-border/50"
+                className="group cursor-pointer hover-lift transition-smooth border-0 bg-white/50 backdrop-blur-sm shadow-soft hover:shadow-electric"
                 onClick={() => handleQuickReply(question)}
               >
-                <CardContent className="p-4">
-                  <div className="flex items-start gap-3">
-                    <div className="w-10 h-10 bg-gradient-electric-soft rounded-lg flex items-center justify-center flex-shrink-0">
+                <CardContent className="p-6">
+                  <div className="flex flex-col items-center text-center space-y-4">
+                    <div className="icon-container-sm group-hover:scale-110 transition-transform">
                       <IconComponent className="w-5 h-5 text-primary" />
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <h4 className="font-medium text-sm mb-1">{question.title}</h4>
-                      <p className="text-xs text-muted-foreground line-clamp-2">{question.description}</p>
+                    <div>
+                      <h4 className="font-display font-semibold text-base mb-2 group-hover:text-primary transition-colors">
+                        {question.title}
+                      </h4>
+                      <p className="text-sm text-muted-foreground leading-relaxed">
+                        {question.description}
+                      </p>
                     </div>
                   </div>
                 </CardContent>
@@ -634,49 +658,49 @@ export function ChatInterface() {
       </div>
 
       {/* Messages Area */}
-      <div className="flex-1 max-w-4xl mx-auto w-full px-4 pb-4">
-        <div className="space-y-4 mb-4">
+      <div className="flex-1 container-desktop pb-8">
+        <div className="space-y-6 mb-6">
           {messages.map((message) => (
             <div
               key={message.id}
               className={cn(
-                "flex gap-3 animate-slide-up",
+                "flex gap-4 animate-slide-up",
                 message.isUser ? "flex-row-reverse" : "flex-row"
               )}
             >
               <div className={cn(
-                "w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0",
+                "w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 shadow-soft",
                 message.isUser 
-                  ? "bg-primary text-primary-foreground" 
-                  : "bg-gradient-electric text-white"
+                  ? "bg-gradient-accent" 
+                  : "bg-gradient-electric"
               )}>
-                {message.isUser ? <User className="w-4 h-4" /> : <Bot className="w-4 h-4" />}
+                {message.isUser ? <User className="w-5 h-5 text-white" /> : <Bot className="w-5 h-5 text-white" />}
               </div>
               <div className={cn(
-                "max-w-[70%] px-4 py-3 rounded-2xl relative group",
+                "max-w-[75%] sm:max-w-[70%] px-6 py-4 rounded-2xl relative group shadow-soft transition-smooth",
                 message.isUser
-                  ? "bg-primary text-primary-foreground rounded-br-md"
-                  : "bg-white shadow-soft rounded-bl-md",
-                message.type === 'file' && "bg-accent/10 border border-accent/20"
+                  ? "bg-gradient-accent text-white rounded-br-lg ml-auto"
+                  : "bg-white/80 backdrop-blur-sm rounded-bl-lg border border-border/20",
+                message.type === 'file' && "bg-white/90 border-2 border-accent/20"
               )}>
-                <div className="text-sm whitespace-pre-line">
+                <div className="text-sm leading-relaxed font-medium">
                   {message.type === 'file' && message.fileUrl && message.fileName?.match(/\.(jpg|jpeg|png|gif|webp)$/i) ? (
-                    <div className="space-y-2">
+                    <div className="space-y-3">
                       <div>{message.content}</div>
                       <img 
                         src={message.fileUrl} 
                         alt={message.fileName || "Uploaded file"} 
-                        className="max-w-full h-auto rounded-lg border border-border/50 max-h-64 object-contain"
+                        className="max-w-full h-auto rounded-xl border border-border/30 max-h-64 object-contain shadow-soft"
                       />
                     </div>
                   ) : message.type === 'file' && message.fileUrl ? (
-                    <div className="space-y-2">
+                    <div className="space-y-3">
                       <div>{message.content}</div>
                       <a 
                         href={message.fileUrl} 
                         target="_blank" 
                         rel="noopener noreferrer"
-                        className="inline-flex items-center gap-2 text-primary hover:text-primary/80 underline"
+                        className="inline-flex items-center gap-2 text-primary hover:text-primary-dark underline transition-colors font-medium"
                       >
                         <Paperclip className="w-4 h-4" />
                         View File
@@ -693,7 +717,7 @@ export function ChatInterface() {
                     variant="ghost"
                     size="sm"
                     onClick={() => setShowManualReview(message.id)}
-                    className="absolute -bottom-8 right-0 opacity-0 group-hover:opacity-100 transition-opacity text-xs h-6 px-2 bg-white shadow-soft border border-border/50 hover:bg-accent/50"
+                    className="absolute -bottom-10 right-0 opacity-0 group-hover:opacity-100 transition-all text-xs h-8 px-3 bg-white/90 backdrop-blur-sm shadow-soft border border-border/30 hover:bg-accent/50 hover:border-accent rounded-full"
                   >
                     <MessageSquareMore className="w-3 h-3 mr-1" />
                     Need Help?
@@ -701,8 +725,8 @@ export function ChatInterface() {
                 )}
                 
                 <p className={cn(
-                  "text-xs mt-1 opacity-70",
-                  message.isUser ? "text-primary-foreground/70" : "text-muted-foreground"
+                  "text-xs mt-3 opacity-75 font-medium",
+                  message.isUser ? "text-white/80" : "text-muted-foreground"
                 )}>
                   {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                 </p>
@@ -792,14 +816,15 @@ export function ChatInterface() {
       </div>
 
       {/* Message Input */}
-      <div className="bg-white border-t border-border shadow-soft">
-        <div className="max-w-4xl mx-auto px-4 py-4">
-          <div className="flex items-end gap-3">
+      <div className="bg-white/80 backdrop-blur-md border-t border-border/50 shadow-soft sticky bottom-0 z-40">
+        <div className="container-desktop py-6">
+          <div className="flex items-end gap-4">
             <Button
               variant="ghost"
               size="icon"
               onClick={handleFileUpload}
-              className="flex-shrink-0 h-10 w-10 hover:bg-accent/10"
+              className="flex-shrink-0 h-12 w-12 hover:bg-accent/10 hover:text-accent transition-smooth rounded-xl shadow-soft bg-white/50"
+              title="Upload File"
             >
               <Paperclip className="w-5 h-5" />
             </Button>
@@ -808,17 +833,16 @@ export function ChatInterface() {
                 value={inputMessage}
                 onChange={(e) => setInputMessage(e.target.value)}
                 placeholder="Type your message..."
-                className="pr-12 h-12 rounded-xl border-border/50 focus:border-primary"
+                className="h-14 pr-16 rounded-2xl border-border/30 bg-white/70 backdrop-blur-sm focus:border-primary focus:ring-2 focus:ring-primary/20 shadow-soft font-medium placeholder:text-muted-foreground/70 transition-smooth"
                 onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
               />
               <Button
                 onClick={handleSendMessage}
                 disabled={!inputMessage.trim() || isTyping}
-                variant="ghost"
-                size="icon"
-                className="absolute right-1 top-1 h-10 w-10 hover:bg-primary hover:text-primary-foreground"
+                className="absolute right-2 top-2 h-10 w-10 p-0 bg-gradient-electric hover:bg-gradient-electric shadow-soft disabled:opacity-50 disabled:cursor-not-allowed transition-smooth"
+                title="Send Message"
               >
-                <Send className="w-4 h-4" />
+                <Send className="w-5 h-5" />
               </Button>
             </div>
           </div>
