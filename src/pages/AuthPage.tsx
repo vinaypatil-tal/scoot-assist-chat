@@ -5,13 +5,20 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
-import { Zap, Phone, ArrowRight, User, Mail } from "lucide-react";
+import { Zap, Phone, ArrowRight, User, Mail, ChevronDown } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
+const countryCodes = [
+  { code: "+1", country: "USA", flag: "🇺🇸" },
+  { code: "+91", country: "India", flag: "🇮🇳" },
+];
+
 export function AuthPage() {
   const [phoneNumber, setPhoneNumber] = useState("");
+  const [countryCode, setCountryCode] = useState("+1");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
@@ -39,8 +46,9 @@ export function AuthPage() {
     setIsLoading(true);
 
     try {
+      const fullPhoneNumber = countryCode + phoneNumber;
       const { error } = await supabase.auth.signInWithOtp({
-        phone: phoneNumber,
+        phone: fullPhoneNumber,
         options: {
           data: {
             full_name: fullName
@@ -71,8 +79,9 @@ export function AuthPage() {
     setIsLoading(true);
 
     try {
+      const fullPhoneNumber = countryCode + phoneNumber;
       const { error } = await supabase.auth.verifyOtp({
-        phone: phoneNumber,
+        phone: fullPhoneNumber,
         token: otp,
         type: 'sms'
       });
@@ -176,7 +185,7 @@ export function AuthPage() {
             <CardHeader className="text-center space-y-2">
               <CardTitle className="text-2xl">Verify Your Phone</CardTitle>
               <CardDescription>
-                Enter the 6-digit code sent to {phoneNumber}
+                Enter the 6-digit code sent to {countryCode} {phoneNumber}
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -295,17 +304,34 @@ export function AuthPage() {
                     <Label htmlFor="phone" className="text-sm font-medium">
                       Mobile Number
                     </Label>
-                    <div className="relative">
-                      <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
-                      <Input
-                        id="phone"
-                        type="tel"
-                        placeholder="+1 (555) 123-4567"
-                        value={phoneNumber}
-                        onChange={(e) => setPhoneNumber(e.target.value)}
-                        className="pl-10 h-12 rounded-lg border-border/50 focus:border-primary"
-                        required
-                      />
+                    <div className="flex gap-2">
+                      <Select value={countryCode} onValueChange={setCountryCode}>
+                        <SelectTrigger className="w-[120px] h-12 rounded-lg border-border/50 focus:border-primary bg-background">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent className="bg-background border border-border shadow-lg z-50">
+                          {countryCodes.map((country) => (
+                            <SelectItem key={country.code} value={country.code} className="hover:bg-accent">
+                              <div className="flex items-center gap-2">
+                                <span>{country.flag}</span>
+                                <span>{country.code}</span>
+                              </div>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <div className="relative flex-1">
+                        <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
+                        <Input
+                          id="phone"
+                          type="tel"
+                          placeholder={countryCode === "+1" ? "(555) 123-4567" : "1234567890"}
+                          value={phoneNumber}
+                          onChange={(e) => setPhoneNumber(e.target.value)}
+                          className="pl-10 h-12 rounded-lg border-border/50 focus:border-primary"
+                          required
+                        />
+                      </div>
                     </div>
                   </div>
                   
