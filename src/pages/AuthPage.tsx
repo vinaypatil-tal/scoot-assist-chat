@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
-import { Zap, Phone, ArrowRight, User, Mail, ChevronDown } from "lucide-react";
+import { Zap, Phone, ArrowRight } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
@@ -19,13 +19,9 @@ const countryCodes = [
 export function AuthPage() {
   const [phoneNumber, setPhoneNumber] = useState("");
   const [countryCode, setCountryCode] = useState("+1");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [fullName, setFullName] = useState("");
   const [otp, setOtp] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [otpSent, setOtpSent] = useState(false);
-  const [activeTab, setActiveTab] = useState("email");
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -84,67 +80,6 @@ export function AuthPage() {
     }, 1500);
   };
 
-  const handleEmailSignUp = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
-
-    try {
-      const redirectUrl = `${window.location.origin}/`;
-      
-      const { error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          emailRedirectTo: redirectUrl,
-          data: {
-            full_name: fullName
-          }
-        }
-      });
-
-      if (error) throw error;
-
-      toast({
-        title: "Check your email",
-        description: "We've sent you a confirmation link.",
-      });
-    } catch (error: any) {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to create account",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleEmailSignIn = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
-
-    try {
-      const { error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
-
-      if (error) throw error;
-
-      toast({
-        title: "Welcome back!",
-        description: "You've been successfully logged in.",
-      });
-    } catch (error: any) {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to sign in",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   const handleAnonymousSignIn = async () => {
     setIsLoading(true);
@@ -272,212 +207,62 @@ export function AuthPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-              <TabsList className="grid w-full grid-cols-2 mb-6">
-                <TabsTrigger value="phone" className="flex items-center gap-2">
-                  <Phone className="w-4 h-4" />
-                  Phone
-                </TabsTrigger>
-                <TabsTrigger value="email" className="flex items-center gap-2">
-                  <Mail className="w-4 h-4" />
-                  Email
-                </TabsTrigger>
-              </TabsList>
-
-              <TabsContent value="phone">
-                <form onSubmit={handlePhoneAuth} className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="phone" className="text-sm font-medium">
-                      Mobile Number
-                    </Label>
-                    <div className="flex gap-2">
-                      <Select value={countryCode} onValueChange={setCountryCode}>
-                        <SelectTrigger className="w-[120px] h-12 rounded-lg border-border/50 focus:border-primary bg-background">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent className="bg-background border border-border shadow-lg z-50">
-                          {countryCodes.map((country) => (
-                            <SelectItem key={country.code} value={country.code} className="hover:bg-accent">
-                              <div className="flex items-center gap-2">
-                                <span>{country.flag}</span>
-                                <span>{country.code}</span>
-                              </div>
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <div className="relative flex-1">
-                        <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
-                        <Input
-                          id="phone"
-                          type="tel"
-                          placeholder={countryCode === "+1" ? "(555) 123-4567" : "1234567890"}
-                          value={phoneNumber}
-                          onChange={(e) => setPhoneNumber(e.target.value)}
-                          className="pl-10 h-12 rounded-lg border-border/50 focus:border-primary"
-                          required
-                        />
-                      </div>
-                    </div>
+            <form onSubmit={handlePhoneAuth} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="phone" className="text-sm font-medium">
+                  Mobile Number
+                </Label>
+                <div className="flex gap-2">
+                  <Select value={countryCode} onValueChange={setCountryCode}>
+                    <SelectTrigger className="w-[120px] h-12 rounded-lg border-border/50 focus:border-primary bg-background">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="bg-background border border-border shadow-lg z-50">
+                      {countryCodes.map((country) => (
+                        <SelectItem key={country.code} value={country.code} className="hover:bg-accent">
+                          <div className="flex items-center gap-2">
+                            <span>{country.flag}</span>
+                            <span>{country.code}</span>
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <div className="relative flex-1">
+                    <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
+                    <Input
+                      id="phone"
+                      type="tel"
+                      placeholder={countryCode === "+1" ? "(555) 123-4567" : "1234567890"}
+                      value={phoneNumber}
+                      onChange={(e) => setPhoneNumber(e.target.value)}
+                      className="pl-10 h-12 rounded-lg border-border/50 focus:border-primary"
+                      required
+                    />
                   </div>
-                  
-                  <Button
-                    type="submit"
-                    variant="electric"
-                    size="mobile"
-                    className="w-full"
-                    disabled={isLoading || !phoneNumber.trim()}
-                  >
-                    {isLoading ? (
-                      <div className="flex items-center gap-2">
-                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                        Sending OTP...
-                      </div>
-                    ) : (
-                      <div className="flex items-center gap-2">
-                        Get OTP
-                        <ArrowRight className="w-4 h-4" />
-                      </div>
-                    )}
-                  </Button>
-                </form>
-              </TabsContent>
-
-              <TabsContent value="email">
-                <Tabs defaultValue="signin" className="w-full">
-                  <TabsList className="grid w-full grid-cols-2 mb-4">
-                    <TabsTrigger value="signin">Sign In</TabsTrigger>
-                    <TabsTrigger value="signup">Sign Up</TabsTrigger>
-                  </TabsList>
-
-                  <TabsContent value="signin">
-                    <form onSubmit={handleEmailSignIn} className="space-y-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="email" className="text-sm font-medium">
-                          Email
-                        </Label>
-                        <div className="relative">
-                          <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
-                          <Input
-                            id="email"
-                            type="email"
-                            placeholder="your@email.com"
-                            value={email}
-                            onChange={(e) => setEmail(e.target.value)}
-                            className="pl-10 h-12 rounded-lg border-border/50 focus:border-primary"
-                            required
-                          />
-                        </div>
-                      </div>
-
-                      <div className="space-y-2">
-                        <Label htmlFor="password" className="text-sm font-medium">
-                          Password
-                        </Label>
-                        <Input
-                          id="password"
-                          type="password"
-                          placeholder="Your password"
-                          value={password}
-                          onChange={(e) => setPassword(e.target.value)}
-                          className="h-12 rounded-lg border-border/50 focus:border-primary"
-                          required
-                        />
-                      </div>
-                      
-                      <Button
-                        type="submit"
-                        variant="electric"
-                        size="mobile"
-                        className="w-full"
-                        disabled={isLoading || !email.trim() || !password.trim()}
-                      >
-                        {isLoading ? (
-                          <div className="flex items-center gap-2">
-                            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                            Signing In...
-                          </div>
-                        ) : (
-                          "Sign In"
-                        )}
-                      </Button>
-                    </form>
-                  </TabsContent>
-
-                  <TabsContent value="signup">
-                    <form onSubmit={handleEmailSignUp} className="space-y-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="signupName" className="text-sm font-medium">
-                          Full Name
-                        </Label>
-                        <div className="relative">
-                          <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
-                          <Input
-                            id="signupName"
-                            type="text"
-                            placeholder="Your full name"
-                            value={fullName}
-                            onChange={(e) => setFullName(e.target.value)}
-                            className="pl-10 h-12 rounded-lg border-border/50 focus:border-primary"
-                            required
-                          />
-                        </div>
-                      </div>
-
-                      <div className="space-y-2">
-                        <Label htmlFor="signupEmail" className="text-sm font-medium">
-                          Email
-                        </Label>
-                        <div className="relative">
-                          <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
-                          <Input
-                            id="signupEmail"
-                            type="email"
-                            placeholder="your@email.com"
-                            value={email}
-                            onChange={(e) => setEmail(e.target.value)}
-                            className="pl-10 h-12 rounded-lg border-border/50 focus:border-primary"
-                            required
-                          />
-                        </div>
-                      </div>
-
-                      <div className="space-y-2">
-                        <Label htmlFor="signupPassword" className="text-sm font-medium">
-                          Password
-                        </Label>
-                        <Input
-                          id="signupPassword"
-                          type="password"
-                          placeholder="Choose a secure password"
-                          value={password}
-                          onChange={(e) => setPassword(e.target.value)}
-                          className="h-12 rounded-lg border-border/50 focus:border-primary"
-                          required
-                        />
-                      </div>
-                      
-                      <Button
-                        type="submit"
-                        variant="electric"
-                        size="mobile"
-                        className="w-full"
-                        disabled={isLoading || !email.trim() || !password.trim() || !fullName.trim()}
-                      >
-                        {isLoading ? (
-                          <div className="flex items-center gap-2">
-                            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                            Creating Account...
-                          </div>
-                        ) : (
-                          "Create Account"
-                        )}
-                      </Button>
-                    </form>
-                  </TabsContent>
-                </Tabs>
-              </TabsContent>
-            </Tabs>
+                </div>
+              </div>
+              
+              <Button
+                type="submit"
+                variant="electric"
+                size="mobile"
+                className="w-full"
+                disabled={isLoading || !phoneNumber.trim()}
+              >
+                {isLoading ? (
+                  <div className="flex items-center gap-2">
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    Sending OTP...
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    Get OTP
+                    <ArrowRight className="w-4 h-4" />
+                  </div>
+                )}
+              </Button>
+            </form>
 
             <div className="mt-6 space-y-4">
               <div className="relative">
