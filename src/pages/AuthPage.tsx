@@ -47,7 +47,7 @@ export function AuthPage() {
       setOtpSent(true);
       toast({
         title: "OTP Sent (Simulated)",
-        description: "Enter any 6-digit code to continue.",
+        description: "Enter any code to continue - all codes will work!",
       });
     }, 2000);
   };
@@ -56,17 +56,17 @@ export function AuthPage() {
     e.preventDefault();
     setIsLoading(true);
 
-    // Simulate OTP verification delay
+    // Simulate OTP verification - any OTP will work
     setTimeout(async () => {
       try {
-        // Sign in anonymously for simulation
+        // Always succeed regardless of OTP entered
         const { error } = await supabase.auth.signInAnonymously();
         
         if (error) throw error;
 
         toast({
           title: "Welcome!",
-          description: "You've been successfully logged in with phone number.",
+          description: "OTP verified successfully! You're now logged in.",
         });
       } catch (error: any) {
         toast({
@@ -152,7 +152,7 @@ export function AuthPage() {
                   variant="electric"
                   size="mobile"
                   className="w-full"
-                  disabled={isLoading || otp.length !== 6}
+                  disabled={isLoading}
                 >
                   {isLoading ? (
                     <div className="flex items-center gap-2">
