@@ -64,12 +64,12 @@ export function AuthPage() {
         }
 
         if (existingProfile) {
-          // User exists, sign in anonymously and update session with profile data
+          // User exists, sign in anonymously and link with existing profile
           const { data: authData, error: authError } = await supabase.auth.signInAnonymously();
           
           if (authError) throw authError;
           
-          // Update the anonymous user session to link with existing profile
+          // Update the profile to link with new auth user
           const { error: updateError } = await supabase
             .from('profiles')
             .update({ user_id: authData.user.id })
@@ -88,14 +88,18 @@ export function AuthPage() {
           if (orderUpdateError) {
             console.error('Error linking existing orders:', orderUpdateError);
           }
-        } else {
-          throw new Error("Phone number not found. Please contact support.");
-        }
 
-        toast({
-          title: "Welcome!",
-          description: "OTP verified successfully! You're now logged in.",
-        });
+          toast({
+            title: "Welcome!",
+            description: "OTP verified successfully! You're now logged in.",
+          });
+        } else {
+          toast({
+            title: "Phone Number Not Found",
+            description: "This phone number is not registered. Please contact support.",
+            variant: "destructive",
+          });
+        }
       } catch (error: any) {
         console.error('Authentication error:', error);
         toast({
