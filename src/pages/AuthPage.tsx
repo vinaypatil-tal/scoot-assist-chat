@@ -304,11 +304,6 @@ export function AuthPage() {
               </TabsList>
 
               <TabsContent value="phone">
-                <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-                  <p className="text-sm text-yellow-800">
-                    <strong>Note:</strong> Phone verification is currently not available for Indian numbers. Please use email authentication instead.
-                  </p>
-                </div>
                 <form onSubmit={handlePhoneAuth} className="space-y-4">
                   <div className="space-y-2">
                     <Label htmlFor="fullName" className="text-sm font-medium">
