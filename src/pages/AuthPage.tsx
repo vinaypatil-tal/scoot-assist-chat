@@ -45,62 +45,43 @@ export function AuthPage() {
     e.preventDefault();
     setIsLoading(true);
 
-    try {
-      const fullPhoneNumber = countryCode + phoneNumber;
-      const { error } = await supabase.auth.signInWithOtp({
-        phone: fullPhoneNumber,
-        options: {
-          data: {
-            full_name: fullName
-          }
-        }
-      });
-
-      if (error) throw error;
-
+    // Simulate OTP sending delay
+    setTimeout(() => {
+      setIsLoading(false);
       setOtpSent(true);
       toast({
-        title: "OTP Sent",
-        description: "Please check your phone for the verification code.",
+        title: "OTP Sent (Simulated)",
+        description: "Enter any 6-digit code to continue.",
       });
-    } catch (error: any) {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to send OTP",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
-    }
+    }, 2000);
   };
 
   const handleVerifyOtp = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
 
-    try {
-      const fullPhoneNumber = countryCode + phoneNumber;
-      const { error } = await supabase.auth.verifyOtp({
-        phone: fullPhoneNumber,
-        token: otp,
-        type: 'sms'
-      });
+    // Simulate OTP verification delay
+    setTimeout(async () => {
+      try {
+        // Sign in anonymously for simulation
+        const { error } = await supabase.auth.signInAnonymously();
+        
+        if (error) throw error;
 
-      if (error) throw error;
-
-      toast({
-        title: "Welcome!",
-        description: "You've been successfully logged in.",
-      });
-    } catch (error: any) {
-      toast({
-        title: "Error",
-        description: error.message || "Invalid OTP",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
-    }
+        toast({
+          title: "Welcome!",
+          description: "You've been successfully logged in with phone number.",
+        });
+      } catch (error: any) {
+        toast({
+          title: "Error",
+          description: error.message || "Failed to sign in",
+          variant: "destructive",
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    }, 1500);
   };
 
   const handleEmailSignUp = async (e: React.FormEvent) => {
@@ -306,24 +287,6 @@ export function AuthPage() {
               <TabsContent value="phone">
                 <form onSubmit={handlePhoneAuth} className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="fullName" className="text-sm font-medium">
-                      Full Name
-                    </Label>
-                    <div className="relative">
-                      <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
-                      <Input
-                        id="fullName"
-                        type="text"
-                        placeholder="Your full name"
-                        value={fullName}
-                        onChange={(e) => setFullName(e.target.value)}
-                        className="pl-10 h-12 rounded-lg border-border/50 focus:border-primary"
-                        required
-                      />
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
                     <Label htmlFor="phone" className="text-sm font-medium">
                       Mobile Number
                     </Label>
@@ -363,7 +326,7 @@ export function AuthPage() {
                     variant="electric"
                     size="mobile"
                     className="w-full"
-                    disabled={isLoading || !phoneNumber.trim() || !fullName.trim()}
+                    disabled={isLoading || !phoneNumber.trim()}
                   >
                     {isLoading ? (
                       <div className="flex items-center gap-2">
