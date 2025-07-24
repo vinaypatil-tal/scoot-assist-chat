@@ -722,17 +722,28 @@ export function ChatInterface() {
                   )}
                 </div>
                 
-                {/* Manual Review Button - only show for bot responses */}
+                {/* Manual Review Buttons - only show for bot responses */}
                 {!message.isUser && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setShowManualReview(message.id)}
-                    className="absolute -bottom-10 right-0 opacity-0 group-hover:opacity-100 transition-all text-xs h-8 px-3 bg-white/90 backdrop-blur-sm shadow-soft border border-border/30 hover:bg-accent/50 hover:border-accent rounded-full"
-                  >
-                    <MessageSquareMore className="w-3 h-3 mr-1" />
-                    Need Help?
-                  </Button>
+                  <div className="absolute -bottom-10 right-0 opacity-0 group-hover:opacity-100 transition-all flex gap-2">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => submitForManualReview(message.id, "Not satisfied with answer")}
+                      className="text-xs h-8 px-3 bg-white/90 backdrop-blur-sm shadow-soft border border-border/30 hover:bg-destructive/10 hover:border-destructive hover:text-destructive rounded-full"
+                    >
+                      <MessageSquareMore className="w-3 h-3 mr-1" />
+                      Not satisfied
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setShowManualReview(message.id)}
+                      className="text-xs h-8 px-3 bg-white/90 backdrop-blur-sm shadow-soft border border-border/30 hover:bg-accent/50 hover:border-accent rounded-full"
+                    >
+                      <MessageSquareMore className="w-3 h-3 mr-1" />
+                      Need Help?
+                    </Button>
+                  </div>
                 )}
                 
                 <p className={cn(
