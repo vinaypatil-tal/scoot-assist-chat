@@ -184,6 +184,69 @@ export type Database = {
         }
         Relationships: []
       }
+      orders: {
+        Row: {
+          actual_delivery_date: string | null
+          created_at: string
+          customer_email: string | null
+          customer_name: string
+          customer_phone: string | null
+          delivery_address: string
+          delivery_notes: string | null
+          delivery_status: string
+          estimated_delivery: string | null
+          id: string
+          order_amount: number
+          order_date: string
+          order_id: string
+          product_model: string | null
+          product_name: string
+          tracking_number: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          actual_delivery_date?: string | null
+          created_at?: string
+          customer_email?: string | null
+          customer_name: string
+          customer_phone?: string | null
+          delivery_address: string
+          delivery_notes?: string | null
+          delivery_status?: string
+          estimated_delivery?: string | null
+          id?: string
+          order_amount: number
+          order_date?: string
+          order_id: string
+          product_model?: string | null
+          product_name: string
+          tracking_number?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          actual_delivery_date?: string | null
+          created_at?: string
+          customer_email?: string | null
+          customer_name?: string
+          customer_phone?: string | null
+          delivery_address?: string
+          delivery_notes?: string | null
+          delivery_status?: string
+          estimated_delivery?: string | null
+          id?: string
+          order_amount?: number
+          order_date?: string
+          order_id?: string
+          product_model?: string | null
+          product_name?: string
+          tracking_number?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string

@@ -568,6 +568,16 @@ export function ChatInterface() {
               <Badge variant="secondary" className="bg-accent/10 text-accent border-accent/20">
                 Live Chat
               </Badge>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => navigate("/orders")}
+                className="h-8 px-3 hover:bg-accent/10 hover:text-accent"
+                title="Track Orders"
+              >
+                <Package className="w-4 h-4 mr-1" />
+                Orders
+              </Button>
               {isAdmin && (
                 <Button
                   variant="ghost"
