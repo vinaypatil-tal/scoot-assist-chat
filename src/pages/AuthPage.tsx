@@ -86,21 +86,22 @@ export function AuthPage() {
         }
 
         if (existingProfile) {
-          // Phone number exists - allow login
+          // Phone number exists - only try to sign in, don't create new account
           console.log('Existing customer found, logging in...');
           
           const tempEmail = `customer_${phoneNumber.replace(/[^0-9]/g, '')}@temp.com`;
           const tempPassword = `temp_${phoneNumber}_password`;
           
-          // Try to sign in first, if that fails, create the auth account
-          let authResult = await supabase.auth.signInWithPassword({
+          // Only try to sign in with existing credentials
+          const authResult = await supabase.auth.signInWithPassword({
             email: tempEmail,
             password: tempPassword,
           });
 
           if (authResult.error) {
-            // Create auth account for existing profile
-            authResult = await supabase.auth.signUp({
+            // If sign in fails, it means the auth account doesn't exist yet
+            // but the profile exists, so we need to create the auth account once
+            const signUpResult = await supabase.auth.signUp({
               email: tempEmail,
               password: tempPassword,
               options: {
@@ -111,29 +112,18 @@ export function AuthPage() {
                 }
               }
             });
-          }
 
-          if (authResult.error) throw authResult.error;
-
-          // Link profile with authenticated user
-          if (authResult.data.user) {
-            const { error: updateError } = await supabase
-              .from('profiles')
-              .update({ user_id: authResult.data.user.id })
-              .eq('phone_number', phoneNumber);
-
-            if (updateError) {
-              console.error('Error linking profile:', updateError);
-            }
-
-            // Link orders with authenticated user
-            const { error: orderUpdateError } = await supabase
-              .from('orders')
-              .update({ user_id: authResult.data.user.id })
-              .eq('user_id', existingProfile.user_id);
-
-            if (orderUpdateError) {
-              console.error('Error linking orders:', orderUpdateError);
+            if (signUpResult.error) {
+              // If we get "User already registered", try signing in again
+              if (signUpResult.error.message.includes('User already registered')) {
+                const retryResult = await supabase.auth.signInWithPassword({
+                  email: tempEmail,
+                  password: tempPassword,
+                });
+                if (retryResult.error) throw retryResult.error;
+              } else {
+                throw signUpResult.error;
+              }
             }
           }
 
@@ -161,9 +151,34 @@ export function AuthPage() {
             }
           });
 
-          if (authError) throw authError;
+          if (authError) {
+            // If user already exists in auth but not in profiles, try to sign in
+            if (authError.message.includes('User already registered')) {
+              const signInResult = await supabase.auth.signInWithPassword({
+                email: tempEmail,
+                password: tempPassword,
+              });
+              if (signInResult.error) throw signInResult.error;
+              
+              if (signInResult.data.user) {
+                // Create profile for existing auth user
+                const { error: profileError } = await supabase
+                  .from('profiles')
+                  .insert({
+                    user_id: signInResult.data.user.id,
+                    phone_number: phoneNumber,
+                    full_name: null
+                  });
 
-          if (authData.user) {
+                if (profileError) {
+                  console.error('Error creating profile:', profileError);
+                  throw new Error("Failed to create customer profile");
+                }
+              }
+            } else {
+              throw authError;
+            }
+          } else if (authData.user) {
             // Create new profile mapping UI mobile number with phone_number column
             const { error: profileError } = await supabase
               .from('profiles')
@@ -181,7 +196,7 @@ export function AuthPage() {
 
           toast({
             title: "Welcome!",
-            description: "New account created successfully! You're now logged in.",
+            description: "Account setup completed successfully! You're now logged in.",
           });
         }
       } catch (error: any) {
