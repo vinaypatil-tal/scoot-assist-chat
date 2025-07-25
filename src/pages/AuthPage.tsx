@@ -34,15 +34,37 @@ export function AuthPage() {
     e.preventDefault();
     setIsLoading(true);
 
-    // Simulate OTP sending delay
-    setTimeout(() => {
+    try {
+      // Check if phone number already exists in profiles table
+      const { data: existingProfile, error: profileError } = await supabase
+        .from('profiles')
+        .select('phone_number')
+        .eq('phone_number', phoneNumber)
+        .maybeSingle();
+
+      if (profileError) {
+        throw new Error("Failed to check existing user");
+      }
+
+      // If phone number exists, just proceed with OTP simulation
+      setTimeout(() => {
+        setIsLoading(false);
+        setOtpSent(true);
+        toast({
+          title: "OTP Sent (Simulated)",
+          description: existingProfile 
+            ? "Welcome back! Enter any code to continue."
+            : "New number detected! Enter any code to continue.",
+        });
+      }, 2000);
+    } catch (error: any) {
       setIsLoading(false);
-      setOtpSent(true);
       toast({
-        title: "OTP Sent (Simulated)",
-        description: "Enter any code to continue - all codes will work!",
+        title: "Error",
+        description: error.message || "Failed to process request",
+        variant: "destructive",
       });
-    }, 2000);
+    }
   };
 
   const handleVerifyOtp = async (e: React.FormEvent) => {
