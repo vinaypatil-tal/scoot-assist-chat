@@ -52,7 +52,7 @@ export function AuthPage() {
     // Simulate OTP verification - any OTP will work
     setTimeout(async () => {
       try {
-        // Check if user exists with this phone number
+        // Check if phone number already exists in profiles table
         const { data: existingProfile, error: profileError } = await supabase
           .from('profiles')
           .select('user_id, phone_number, full_name')
@@ -64,18 +64,20 @@ export function AuthPage() {
         }
 
         if (existingProfile) {
-          // Existing customer - create a session using email/password auth with a generated email
+          // Phone number exists - allow login
+          console.log('Existing customer found, logging in...');
+          
           const tempEmail = `customer_${phoneNumber.replace(/[^0-9]/g, '')}@temp.com`;
           const tempPassword = `temp_${phoneNumber}_password`;
           
-          // Try to sign in first, if that fails, create the account
+          // Try to sign in first, if that fails, create the auth account
           let authResult = await supabase.auth.signInWithPassword({
             email: tempEmail,
             password: tempPassword,
           });
 
           if (authResult.error) {
-            // If sign in fails, create the account
+            // Create auth account for existing profile
             authResult = await supabase.auth.signUp({
               email: tempEmail,
               password: tempPassword,
@@ -91,7 +93,7 @@ export function AuthPage() {
 
           if (authResult.error) throw authResult.error;
 
-          // Update the profile to link with the authenticated user
+          // Link profile with authenticated user
           if (authResult.data.user) {
             const { error: updateError } = await supabase
               .from('profiles')
@@ -99,29 +101,32 @@ export function AuthPage() {
               .eq('phone_number', phoneNumber);
 
             if (updateError) {
-              console.error('Error linking existing profile:', updateError);
+              console.error('Error linking profile:', updateError);
             }
 
-            // Update orders to link with the authenticated user
+            // Link orders with authenticated user
             const { error: orderUpdateError } = await supabase
               .from('orders')
               .update({ user_id: authResult.data.user.id })
               .eq('user_id', existingProfile.user_id);
 
             if (orderUpdateError) {
-              console.error('Error linking existing orders:', orderUpdateError);
+              console.error('Error linking orders:', orderUpdateError);
             }
           }
 
           toast({
             title: "Welcome Back!",
-            description: "OTP verified successfully! You're now logged in.",
+            description: "Login successful! You're now logged in.",
           });
         } else {
-          // New customer - create account and profile
+          // Phone number is new - create user in profile table
+          console.log('New phone number, creating user...');
+          
           const tempEmail = `customer_${phoneNumber.replace(/[^0-9]/g, '')}@temp.com`;
           const tempPassword = `temp_${phoneNumber}_password`;
 
+          // Create auth account
           const { data: authData, error: authError } = await supabase.auth.signUp({
             email: tempEmail,
             password: tempPassword,
@@ -137,24 +142,24 @@ export function AuthPage() {
           if (authError) throw authError;
 
           if (authData.user) {
-            // Create new profile for this phone number
+            // Create new profile mapping UI mobile number with phone_number column
             const { error: profileError } = await supabase
               .from('profiles')
               .insert({
                 user_id: authData.user.id,
-                phone_number: phoneNumber,
+                phone_number: phoneNumber, // Map UI mobile number to phone_number column
                 full_name: null
               });
 
             if (profileError) {
-              console.error('Error creating new profile:', profileError);
+              console.error('Error creating profile:', profileError);
               throw new Error("Failed to create customer profile");
             }
           }
 
           toast({
             title: "Welcome!",
-            description: "New customer account created! You're now logged in.",
+            description: "New account created successfully! You're now logged in.",
           });
         }
       } catch (error: any) {
