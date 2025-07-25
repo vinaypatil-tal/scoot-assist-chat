@@ -7,6 +7,10 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
 import { 
   Search, 
   Package, 
@@ -17,7 +21,8 @@ import {
   ArrowLeft,
   Calendar,
   Phone,
-  Mail
+  Mail,
+  Plus
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -88,6 +93,21 @@ export default function OrderTracking() {
   const [searchResult, setSearchResult] = useState<Order | null>(null);
   const [userOrders, setUserOrders] = useState<Order[]>([]);
   const [searching, setSearching] = useState(false);
+  const [createOrderOpen, setCreateOrderOpen] = useState(false);
+  const [creating, setCreating] = useState(false);
+  
+  // Create order form state
+  const [newOrder, setNewOrder] = useState({
+    customer_name: "",
+    customer_phone: "",
+    customer_email: "",
+    product_name: "",
+    product_model: "",
+    order_amount: "",
+    delivery_address: "",
+    delivery_notes: "",
+    delivery_status: "confirmed"
+  });
   
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -193,6 +213,105 @@ export default function OrderTracking() {
       });
     } finally {
       setSearching(false);
+    }
+  };
+
+  const createOrder = async () => {
+    // Validate required fields
+    if (!newOrder.customer_name || !newOrder.product_name || !newOrder.order_amount || !newOrder.delivery_address) {
+      toast({
+        title: "Missing Required Fields",
+        description: "Please fill in all required fields",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!user) {
+      toast({
+        title: "Authentication Error",
+        description: "You must be logged in to create an order",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setCreating(true);
+    try {
+      // Generate order ID
+      const currentYear = new Date().getFullYear();
+      const orderNumber = Math.floor(Math.random() * 9999).toString().padStart(3, '0');
+      const orderId = `ES-${currentYear}-${orderNumber}`;
+      
+      // Generate tracking number
+      const trackingNumber = `ES${currentYear}${Math.floor(Math.random() * 99999).toString().padStart(5, '0')}-TRACK`;
+
+      // Calculate estimated delivery (7 days from now)
+      const estimatedDelivery = new Date();
+      estimatedDelivery.setDate(estimatedDelivery.getDate() + 7);
+
+      const orderData = {
+        user_id: user.id,
+        order_id: orderId,
+        customer_name: newOrder.customer_name,
+        customer_phone: newOrder.customer_phone || null,
+        customer_email: newOrder.customer_email || null,
+        product_name: newOrder.product_name,
+        product_model: newOrder.product_model || null,
+        order_amount: parseFloat(newOrder.order_amount),
+        estimated_delivery: estimatedDelivery.toISOString().split('T')[0],
+        delivery_status: newOrder.delivery_status,
+        tracking_number: trackingNumber,
+        delivery_address: newOrder.delivery_address,
+        delivery_notes: newOrder.delivery_notes || null,
+      };
+
+      const { data, error } = await supabase
+        .from('orders')
+        .insert([orderData])
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error creating order:', error);
+        toast({
+          title: "Error Creating Order",
+          description: "An error occurred while creating the order",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      toast({
+        title: "Order Created Successfully",
+        description: `Order ${orderId} has been created`,
+      });
+
+      // Reset form and close dialog
+      setNewOrder({
+        customer_name: "",
+        customer_phone: "",
+        customer_email: "",
+        product_name: "",
+        product_model: "",
+        order_amount: "",
+        delivery_address: "",
+        delivery_notes: "",
+        delivery_status: "confirmed"
+      });
+      setCreateOrderOpen(false);
+
+      // Reload orders
+      await loadUserOrders();
+    } catch (error) {
+      console.error('Error creating order:', error);
+      toast({
+        title: "Error Creating Order",
+        description: "An unexpected error occurred",
+        variant: "destructive",
+      });
+    } finally {
+      setCreating(false);
     }
   };
 
@@ -333,6 +452,138 @@ export default function OrderTracking() {
                 <p className="text-sm text-muted-foreground">Track your ElectroScoot orders</p>
               </div>
             </div>
+            <Dialog open={createOrderOpen} onOpenChange={setCreateOrderOpen}>
+              <DialogTrigger asChild>
+                <Button className="flex items-center gap-2">
+                  <Plus className="w-4 h-4" />
+                  Create Order
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+                <DialogHeader>
+                  <DialogTitle>Create New Order</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="customer_name">Customer Name *</Label>
+                      <Input
+                        id="customer_name"
+                        value={newOrder.customer_name}
+                        onChange={(e) => setNewOrder({...newOrder, customer_name: e.target.value})}
+                        placeholder="Enter customer name"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="customer_phone">Customer Phone</Label>
+                      <Input
+                        id="customer_phone"
+                        value={newOrder.customer_phone}
+                        onChange={(e) => setNewOrder({...newOrder, customer_phone: e.target.value})}
+                        placeholder="Enter phone number"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="customer_email">Customer Email</Label>
+                      <Input
+                        id="customer_email"
+                        type="email"
+                        value={newOrder.customer_email}
+                        onChange={(e) => setNewOrder({...newOrder, customer_email: e.target.value})}
+                        placeholder="Enter email address"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="product_name">Product Name *</Label>
+                      <Select value={newOrder.product_name} onValueChange={(value) => setNewOrder({...newOrder, product_name: value})}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select product" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="ElectroScoot Lite">ElectroScoot Lite</SelectItem>
+                          <SelectItem value="ElectroScoot Pro">ElectroScoot Pro</SelectItem>
+                          <SelectItem value="ElectroScoot Max">ElectroScoot Max</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="product_model">Product Model</Label>
+                      <Select value={newOrder.product_model} onValueChange={(value) => setNewOrder({...newOrder, product_model: value})}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select model" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="ES-LITE-2024">ES-LITE-2024</SelectItem>
+                          <SelectItem value="ES-PRO-2024">ES-PRO-2024</SelectItem>
+                          <SelectItem value="ES-MAX-2024">ES-MAX-2024</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="order_amount">Order Amount *</Label>
+                      <Input
+                        id="order_amount"
+                        type="number"
+                        step="0.01"
+                        value={newOrder.order_amount}
+                        onChange={(e) => setNewOrder({...newOrder, order_amount: e.target.value})}
+                        placeholder="Enter amount"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="delivery_status">Delivery Status</Label>
+                      <Select value={newOrder.delivery_status} onValueChange={(value) => setNewOrder({...newOrder, delivery_status: value})}>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="confirmed">Confirmed</SelectItem>
+                          <SelectItem value="processing">Processing</SelectItem>
+                          <SelectItem value="shipped">Shipped</SelectItem>
+                          <SelectItem value="out_for_delivery">Out for Delivery</SelectItem>
+                          <SelectItem value="delivered">Delivered</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="delivery_address">Delivery Address *</Label>
+                    <Textarea
+                      id="delivery_address"
+                      value={newOrder.delivery_address}
+                      onChange={(e) => setNewOrder({...newOrder, delivery_address: e.target.value})}
+                      placeholder="Enter delivery address"
+                      rows={3}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="delivery_notes">Delivery Notes</Label>
+                    <Textarea
+                      id="delivery_notes"
+                      value={newOrder.delivery_notes}
+                      onChange={(e) => setNewOrder({...newOrder, delivery_notes: e.target.value})}
+                      placeholder="Enter delivery notes (optional)"
+                      rows={2}
+                    />
+                  </div>
+                  <div className="flex justify-end gap-3 pt-4">
+                    <Button 
+                      variant="outline" 
+                      onClick={() => setCreateOrderOpen(false)}
+                      disabled={creating}
+                    >
+                      Cancel
+                    </Button>
+                    <Button 
+                      onClick={createOrder}
+                      disabled={creating}
+                    >
+                      {creating ? "Creating..." : "Create Order"}
+                    </Button>
+                  </div>
+                </div>
+              </DialogContent>
+            </Dialog>
           </div>
         </div>
       </div>
