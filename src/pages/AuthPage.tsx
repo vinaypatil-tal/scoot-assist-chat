@@ -64,7 +64,7 @@ export function AuthPage() {
         }
 
         if (existingProfile) {
-          // User exists, sign in anonymously and link with existing profile
+          // Existing customer - sign in anonymously and link with existing profile
           const { data: authData, error: authError } = await supabase.auth.signInAnonymously();
           
           if (authError) throw authError;
@@ -90,14 +90,32 @@ export function AuthPage() {
           }
 
           toast({
-            title: "Welcome!",
+            title: "Welcome Back!",
             description: "OTP verified successfully! You're now logged in.",
           });
         } else {
+          // New customer - create new anonymous user and profile
+          const { data: authData, error: authError } = await supabase.auth.signInAnonymously();
+          
+          if (authError) throw authError;
+
+          // Create new profile for this phone number (unique customer ID)
+          const { error: profileError } = await supabase
+            .from('profiles')
+            .insert({
+              user_id: authData.user.id,
+              phone_number: phoneNumber,
+              full_name: null
+            });
+
+          if (profileError) {
+            console.error('Error creating new profile:', profileError);
+            throw new Error("Failed to create customer profile");
+          }
+
           toast({
-            title: "Phone Number Not Found",
-            description: "This phone number is not registered. Please contact support.",
-            variant: "destructive",
+            title: "Welcome!",
+            description: "New customer account created! You're now logged in.",
           });
         }
       } catch (error: any) {
