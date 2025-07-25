@@ -106,7 +106,7 @@ export default function OrderTracking() {
       }
 
       setUser(user);
-      await loadUserOrders(user.id);
+      await loadUserOrders();
     } catch (error) {
       console.error('Error checking user:', error);
       navigate("/auth");
@@ -115,16 +115,15 @@ export default function OrderTracking() {
     }
   };
 
-  const loadUserOrders = async (userId: string) => {
+  const loadUserOrders = async () => {
     try {
-      console.log('Loading orders for user ID:', userId);
+      console.log('Loading all orders...');
       const { data, error } = await supabase
         .from('orders')
         .select('*')
-        .eq('user_id', userId)
         .order('order_date', { ascending: false });
 
-      console.log('User orders query result:', { data, error, count: data?.length });
+      console.log('All orders query result:', { data, error, count: data?.length });
 
       if (error) {
         console.error('Error loading orders:', error);
@@ -135,7 +134,7 @@ export default function OrderTracking() {
         setUserOrders(data);
       }
     } catch (error) {
-      console.error('Error loading user orders:', error);
+      console.error('Error loading orders:', error);
     }
   };
 
@@ -375,10 +374,10 @@ export default function OrderTracking() {
           </div>
         )}
 
-        {/* User Orders */}
+        {/* All Orders */}
         {userOrders.length > 0 && (
           <div>
-            <h2 className="text-lg font-semibold mb-4">Your Orders</h2>
+            <h2 className="text-lg font-semibold mb-4">All Orders</h2>
             <div className="space-y-4">
               {userOrders.map((order) => (
                 <OrderCard key={order.id} order={order} />
