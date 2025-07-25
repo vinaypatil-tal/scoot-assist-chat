@@ -104,9 +104,11 @@ export default function OrderTracking() {
     product_name: "",
     product_model: "",
     order_amount: "",
+    estimated_delivery: "",
+    actual_delivery_date: "",
+    delivery_status: "confirmed",
     delivery_address: "",
-    delivery_notes: "",
-    delivery_status: "confirmed"
+    delivery_notes: ""
   });
   
   const navigate = useNavigate();
@@ -221,7 +223,7 @@ export default function OrderTracking() {
     if (!newOrder.customer_name || !newOrder.product_name || !newOrder.order_amount || !newOrder.delivery_address) {
       toast({
         title: "Missing Required Fields",
-        description: "Please fill in all required fields",
+        description: "Please fill in customer name, product name, order amount, and delivery address",
         variant: "destructive",
       });
       return;
@@ -246,9 +248,15 @@ export default function OrderTracking() {
       // Generate tracking number
       const trackingNumber = `ES${currentYear}${Math.floor(Math.random() * 99999).toString().padStart(5, '0')}-TRACK`;
 
-      // Calculate estimated delivery (7 days from now)
-      const estimatedDelivery = new Date();
-      estimatedDelivery.setDate(estimatedDelivery.getDate() + 7);
+      // Use provided estimated delivery or calculate default (7 days from now)
+      let estimatedDelivery;
+      if (newOrder.estimated_delivery) {
+        estimatedDelivery = newOrder.estimated_delivery;
+      } else {
+        const defaultDelivery = new Date();
+        defaultDelivery.setDate(defaultDelivery.getDate() + 7);
+        estimatedDelivery = defaultDelivery.toISOString().split('T')[0];
+      }
 
       const orderData = {
         user_id: user.id,
@@ -259,7 +267,8 @@ export default function OrderTracking() {
         product_name: newOrder.product_name,
         product_model: newOrder.product_model || null,
         order_amount: parseFloat(newOrder.order_amount),
-        estimated_delivery: estimatedDelivery.toISOString().split('T')[0],
+        estimated_delivery: estimatedDelivery,
+        actual_delivery_date: newOrder.actual_delivery_date || null,
         delivery_status: newOrder.delivery_status,
         tracking_number: trackingNumber,
         delivery_address: newOrder.delivery_address,
@@ -295,9 +304,11 @@ export default function OrderTracking() {
         product_name: "",
         product_model: "",
         order_amount: "",
+        estimated_delivery: "",
+        actual_delivery_date: "",
+        delivery_status: "confirmed",
         delivery_address: "",
-        delivery_notes: "",
-        delivery_status: "confirmed"
+        delivery_notes: ""
       });
       setCreateOrderOpen(false);
 
@@ -531,6 +542,15 @@ export default function OrderTracking() {
                       />
                     </div>
                     <div className="space-y-2">
+                      <Label htmlFor="estimated_delivery">Estimated Delivery Date</Label>
+                      <Input
+                        id="estimated_delivery"
+                        type="date"
+                        value={newOrder.estimated_delivery}
+                        onChange={(e) => setNewOrder({...newOrder, estimated_delivery: e.target.value})}
+                      />
+                    </div>
+                    <div className="space-y-2">
                       <Label htmlFor="delivery_status">Delivery Status</Label>
                       <Select value={newOrder.delivery_status} onValueChange={(value) => setNewOrder({...newOrder, delivery_status: value})}>
                         <SelectTrigger>
@@ -545,6 +565,17 @@ export default function OrderTracking() {
                         </SelectContent>
                       </Select>
                     </div>
+                    {newOrder.delivery_status === 'delivered' && (
+                      <div className="space-y-2">
+                        <Label htmlFor="actual_delivery_date">Actual Delivery Date</Label>
+                        <Input
+                          id="actual_delivery_date"
+                          type="date"
+                          value={newOrder.actual_delivery_date}
+                          onChange={(e) => setNewOrder({...newOrder, actual_delivery_date: e.target.value})}
+                        />
+                      </div>
+                    )}
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="delivery_address">Delivery Address *</Label>
