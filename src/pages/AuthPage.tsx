@@ -55,7 +55,7 @@ export function AuthPage() {
         // Check if user exists with this phone number
         const { data: existingProfile, error: profileError } = await supabase
           .from('profiles')
-          .select('user_id')
+          .select('user_id, phone_number, full_name')
           .eq('phone_number', phoneNumber)
           .maybeSingle();
 
@@ -64,29 +64,53 @@ export function AuthPage() {
         }
 
         if (existingProfile) {
-          // Existing customer - sign in anonymously and link with existing profile
-          const { data: authData, error: authError } = await supabase.auth.signInAnonymously();
+          // Existing customer - create a session using email/password auth with a generated email
+          const tempEmail = `customer_${phoneNumber.replace(/[^0-9]/g, '')}@temp.com`;
+          const tempPassword = `temp_${phoneNumber}_password`;
           
-          if (authError) throw authError;
-          
-          // Update the profile to link with new auth user
-          const { error: updateError } = await supabase
-            .from('profiles')
-            .update({ user_id: authData.user.id })
-            .eq('user_id', existingProfile.user_id);
+          // Try to sign in first, if that fails, create the account
+          let authResult = await supabase.auth.signInWithPassword({
+            email: tempEmail,
+            password: tempPassword,
+          });
 
-          if (updateError) {
-            console.error('Error linking existing profile:', updateError);
+          if (authResult.error) {
+            // If sign in fails, create the account
+            authResult = await supabase.auth.signUp({
+              email: tempEmail,
+              password: tempPassword,
+              options: {
+                emailRedirectTo: `${window.location.origin}/`,
+                data: {
+                  phone_number: phoneNumber,
+                  full_name: existingProfile.full_name
+                }
+              }
+            });
           }
 
-          // Update orders to link with new auth user
-          const { error: orderUpdateError } = await supabase
-            .from('orders')
-            .update({ user_id: authData.user.id })
-            .eq('user_id', existingProfile.user_id);
+          if (authResult.error) throw authResult.error;
 
-          if (orderUpdateError) {
-            console.error('Error linking existing orders:', orderUpdateError);
+          // Update the profile to link with the authenticated user
+          if (authResult.data.user) {
+            const { error: updateError } = await supabase
+              .from('profiles')
+              .update({ user_id: authResult.data.user.id })
+              .eq('phone_number', phoneNumber);
+
+            if (updateError) {
+              console.error('Error linking existing profile:', updateError);
+            }
+
+            // Update orders to link with the authenticated user
+            const { error: orderUpdateError } = await supabase
+              .from('orders')
+              .update({ user_id: authResult.data.user.id })
+              .eq('user_id', existingProfile.user_id);
+
+            if (orderUpdateError) {
+              console.error('Error linking existing orders:', orderUpdateError);
+            }
           }
 
           toast({
@@ -94,23 +118,38 @@ export function AuthPage() {
             description: "OTP verified successfully! You're now logged in.",
           });
         } else {
-          // New customer - create new anonymous user and profile
-          const { data: authData, error: authError } = await supabase.auth.signInAnonymously();
-          
+          // New customer - create account and profile
+          const tempEmail = `customer_${phoneNumber.replace(/[^0-9]/g, '')}@temp.com`;
+          const tempPassword = `temp_${phoneNumber}_password`;
+
+          const { data: authData, error: authError } = await supabase.auth.signUp({
+            email: tempEmail,
+            password: tempPassword,
+            options: {
+              emailRedirectTo: `${window.location.origin}/`,
+              data: {
+                phone_number: phoneNumber,
+                full_name: null
+              }
+            }
+          });
+
           if (authError) throw authError;
 
-          // Create new profile for this phone number (unique customer ID)
-          const { error: profileError } = await supabase
-            .from('profiles')
-            .insert({
-              user_id: authData.user.id,
-              phone_number: phoneNumber,
-              full_name: null
-            });
+          if (authData.user) {
+            // Create new profile for this phone number
+            const { error: profileError } = await supabase
+              .from('profiles')
+              .insert({
+                user_id: authData.user.id,
+                phone_number: phoneNumber,
+                full_name: null
+              });
 
-          if (profileError) {
-            console.error('Error creating new profile:', profileError);
-            throw new Error("Failed to create customer profile");
+            if (profileError) {
+              console.error('Error creating new profile:', profileError);
+              throw new Error("Failed to create customer profile");
+            }
           }
 
           toast({
