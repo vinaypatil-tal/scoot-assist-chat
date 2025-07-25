@@ -161,18 +161,37 @@ export function AuthPage() {
               if (signInResult.error) throw signInResult.error;
               
               if (signInResult.data.user) {
-                // Create profile for existing auth user
-                const { error: profileError } = await supabase
+                // Check if profile already exists for this user
+                const { data: existingUserProfile, error: checkError } = await supabase
                   .from('profiles')
-                  .insert({
-                    user_id: signInResult.data.user.id,
-                    phone_number: phoneNumber,
-                    full_name: null
-                  });
+                  .select('user_id')
+                  .eq('user_id', signInResult.data.user.id)
+                  .maybeSingle();
 
-                if (profileError) {
-                  console.error('Error creating profile:', profileError);
-                  throw new Error("Failed to create customer profile");
+                if (checkError) {
+                  console.error('Error checking existing profile:', checkError);
+                  throw new Error("Failed to verify user profile");
+                }
+
+                // Only create profile if it doesn't exist
+                if (!existingUserProfile) {
+                  const { error: profileError } = await supabase
+                    .from('profiles')
+                    .insert({
+                      user_id: signInResult.data.user.id,
+                      phone_number: phoneNumber,
+                      full_name: null
+                    });
+
+                  if (profileError) {
+                    console.error('Error creating profile:', profileError);
+                    // Check if it's a duplicate key error (profile was created by another process)
+                    if (profileError.code === '23505') {
+                      console.log('Profile already exists, continuing...');
+                    } else {
+                      throw new Error("Failed to create customer profile");
+                    }
+                  }
                 }
               }
             } else {
